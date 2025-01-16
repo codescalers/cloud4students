@@ -164,12 +164,12 @@ export default {
     return await authClient().get("/region");
   },
 
-  async deployVm(name, region, resources, publicIP) {
+  async deployVm(name, region, resources, isPublic) {
     return await authClient().post("/vm", {
       name,
       region,
       resources,
-      publicIP,
+      public: isPublic,
     });
   },
 
