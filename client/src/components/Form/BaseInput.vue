@@ -6,7 +6,6 @@
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"
     density="compact"
-    :required="required"
   ></v-text-field>
 </template>
 
@@ -16,10 +15,6 @@ export default {
     modelValue: {
       type: String,
       default: "",
-    },
-    required: {
-      type: Boolean,
-      default: false,
     },
   },
 };

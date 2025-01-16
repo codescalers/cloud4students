@@ -1,6 +1,6 @@
 <template>
   <v-row>
-    <v-col cols="12">
+    <v-col cols="12" v-if="cards">
       <v-card variant="flat">
         <div class="d-flex flex-no-wrap justify-space-between">
           <div>
@@ -29,13 +29,14 @@
           >use your voucher
         </v-card-title>
 
-        <!-- TODO reason for user -->
-        <v-form v-model="verifyVoucher">
+        <v-form v-model="verifyVoucher" @submit.prevent="activateVoucher">
           <div class="d-flex w-75">
             <BaseInput
               v-model="voucher"
               placeholder="Voucher code"
               class="ml-4"
+              :rules="[required]"
+              :loading="loading"
             />
             <BaseButton
               type="submit"
@@ -48,9 +49,8 @@
         </v-form>
       </v-card>
     </v-col>
-  </v-row>
-  <v-row>
-    <v-col cols="12">
+
+    <v-col cols="12" v-if="cards">
       <v-card variant="flat">
         <v-card-title class="text-h6 text-capitalize"
           >Choose your Top-up amount:</v-card-title
@@ -102,9 +102,15 @@ import BaseInput from "./Form/BaseInput.vue";
 import BaseButton from "./Form/BaseButton.vue";
 import userService from "@/services/userService";
 import Toast from "./Toast.vue";
-
+defineProps({
+  cards: {
+    type: Boolean,
+    default: false,
+  },
+});
 const selection = ref(null);
 const verify = ref(false);
+const loading = ref(false);
 const verifyVoucher = ref(false);
 const toast = ref(null);
 const user = inject("user");
@@ -113,6 +119,26 @@ const voucher = ref();
 const amount = ref();
 const paymentId = ref();
 
+function required(v) {
+  return !!v || "Field is required";
+}
+// FIXME after voucher is activated
+function activateVoucher() {
+  loading.value = true;
+  userService
+    .activateVoucher(voucher.value)
+    .then((response) => {
+      console.log(response); // after voucher is activated
+    })
+    .catch((response) => {
+      const { err } = response.response.data;
+      toast.value.toast(err, "#FF5252");
+    })
+    .finally(() => {
+      loading.value = false;
+      voucher.value = "";
+    });
+}
 // FIXME payment_method_id?
 function chargeBalance() {
   userService
