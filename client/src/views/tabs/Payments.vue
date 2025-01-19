@@ -1,12 +1,17 @@
 <template>
   <v-container>
-    <AddPayment />
+    <AddPayment @update-data="updateCards" />
 
     <v-divider />
 
-    <SavedCards v-if="cards.length > 0" :cards="cards" />
+    <SavedCards
+      v-if="cards && cards.length > 0"
+      :cards="cards"
+      @on-update="updateCards"
+    />
 
     <Alerts
+      v-if="cards && cards.length == 1"
       type="warning"
       text="You cannot remove your current card without first adding another valid payment method."
     />
@@ -38,6 +43,10 @@ function getCards() {
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
     });
+}
+
+function updateCards(data) {
+  cards.value = data;
 }
 
 onMounted(() => {

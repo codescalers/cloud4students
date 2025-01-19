@@ -6,11 +6,14 @@
         class="my-5"
         text="+ Add Payment Method"
         variant="outlined"
-        rounded="lg"
       />
     </template>
 
-    <PaymentCard title="Add a new payment method" @on-close="dialog = false" />
+    <PaymentCard
+      title="Add a new payment method"
+      @on-update="updateData"
+      @on-close="dialog = false"
+    />
   </v-dialog>
 </template>
 <script setup>
@@ -18,5 +21,10 @@ import { ref } from "vue";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import PaymentCard from "./PaymentCard.vue";
 
+const emit = defineEmits("updateData");
 const dialog = ref(false);
+
+function updateData(data) {
+  emit("updateData", data);
+}
 </script>

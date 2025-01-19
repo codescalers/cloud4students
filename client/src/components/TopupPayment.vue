@@ -139,14 +139,15 @@ function activateVoucher() {
       voucher.value = "";
     });
 }
-// FIXME payment_method_id?
+// FIXME payment_method_id? scenario?
 function chargeBalance() {
   userService
-    .chargeBalance(amount.value, paymentId.value)
+    .chargeBalance(amount.value ? amount.value : selection, paymentId.value)
     .then((response) => {
       console.log(response);
     })
     .catch((response) => {
+      console.log(response);
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
     });

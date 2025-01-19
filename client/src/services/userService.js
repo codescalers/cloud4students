@@ -105,15 +105,24 @@ export default {
     });
   },
 
-  async addCard(card_type, payment_method_id) {
+  async addCard(token_id, token_type) {
     return await authClient().post("/user/card", {
-      card_type,
-      payment_method_id,
+      token_id,
+      token_type,
     });
   },
 
   async getCards() {
     return await authClient().get("/user/card");
+  },
+
+  async setDefaultCard(payment_method_id) {
+    return await authClient().put("/user/card/default", { payment_method_id });
+  },
+  // FIXME define id?
+  async deleteCard(payment_method_id) {
+    console.log(payment_method_id)
+    return await authClient().delete("/user/card", { payment_method_id });
   },
 
   async changePassword(email, password, confirm_password) {

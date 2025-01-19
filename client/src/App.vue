@@ -10,6 +10,7 @@ import { computed, onMounted, provide, ref } from "vue";
 import { useRoute } from "vue-router";
 import userService from "./services/userService";
 import Toast from "./components/Toast.vue";
+import router from "./router";
 
 const route = useRoute();
 const fetchedUser = ref({});
@@ -27,10 +28,9 @@ const getUser = () => {
       const { user } = response.data.data;
       fetchedUser.value = user;
     })
-    .catch((response) => {
-      const { err } = response.response.data;
-      toast.value.toast(err, "#FF5252");
-      userService.refresh_token();
+    .catch(() => {
+      const token = localStorage.getItem("token");
+      token ? userService.refresh_token() : router.push("/");
     });
 };
 provide("user", fetchedUser);

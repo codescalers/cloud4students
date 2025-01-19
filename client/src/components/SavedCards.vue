@@ -1,37 +1,48 @@
 <template>
-  <h2 class="font-weight-bold my-5">Your Saved Card</h2>
+  <h2 class="font-weight-bold my-5">Your Saved Cards</h2>
 
-  <v-card border="opacity-25 sm my-5" v-if="cards.length > 0">
+  <v-card
+    border="opacity-25 sm"
+    class="my-5"
+    v-for="card in cards"
+    :key="card.id"
+  >
     <v-card-actions>
       <v-list-item class="w-100">
         <template v-slot:prepend>
-          <v-avatar color="grey-darken-3">Visa</v-avatar>
+          <v-avatar rounded="0" size="40px">
+            <v-img :src="`/src/assets/cards_logos/${card.brand}.png`" />
+          </v-avatar>
         </template>
 
-        <v-list-item-title>Visa Card ending in 8466</v-list-item-title>
+        <v-list-item-title class="text-capitalize text-medium-emphasis"
+          >{{ card.brand }} Card ending in {{ card.last_4 }}</v-list-item-title
+        >
 
-        <v-list-item-subtitle>Expires 07/26</v-list-item-subtitle>
-
+        <v-list-item-subtitle class="text-medium-emphasis"
+          >Expires
+          {{ card.exp_month < 10 ? `0${card.exp_month}` : card.exp_month }}/{{
+            card.exp_year.toString().slice(-2)
+          }}</v-list-item-subtitle
+        >
         <template v-slot:append>
+          <BaseButton
+            class="mx-5 text-normal"
+            text="Set as default"
+            rounded
+            color="info"
+            density="compact"
+            :disabled="getDefaultCard(card.payment_method_id)"
+            @click="setDefaultCard(card.payment_method_id)"
+          />
           <div class="justify-self-end">
-            <v-dialog v-model="dialog" max-width="800">
-              <template v-slot:activator="{ props: activatorProps }">
-                <v-icon
-                  v-bind="activatorProps"
-                  class="me-3"
-                  icon="mdi-pencil"
-                ></v-icon>
-              </template>
-
-              <PaymentCard title="Edit Card" @on-close="dialog = false" />
-            </v-dialog>
-
-            <v-dialog max-width="500">
+            <v-dialog v-model="dialog" max-width="500">
               <template v-slot:activator="{ props: activatorProps }">
                 <v-icon
                   v-bind="activatorProps"
                   class="me-1"
                   icon="mdi-trash-can-outline"
+                  :disabled="cards.length == 1"
                 ></v-icon>
               </template>
 
@@ -50,37 +61,74 @@
                       text="Cancel"
                       @click="isActive.value = false"
                       variant="outlined"
-                      rounded="lg"
                     />
 
                     <BaseButton
                       type="submit"
                       text="Yes Delete"
                       color="error"
-                      rounded="lg"
-                      @click="deleteCard"
+                      @click="deleteCard(card.payment_method_id)"
                     />
                   </v-card-actions>
                 </v-card>
               </template>
             </v-dialog>
+            {{ card }}
           </div>
         </template>
       </v-list-item>
     </v-card-actions>
   </v-card>
+  <Toast ref="toast" />
 </template>
 <script setup>
-import { ref } from "vue";
-import PaymentCard from "./PaymentCard.vue";
+import { ref, inject } from "vue";
 import BaseButton from "./Form/BaseButton.vue";
+import userService from "@/services/userService";
+import Toast from "./Toast.vue";
+
 defineProps({
   cards: {
     type: Array,
   },
 });
+
+const emit = defineEmits("onUpdate");
+
+const toast = ref();
 const dialog = ref(false);
+const user = inject("user");
 
-function deleteCard() {}
+function setDefaultCard(id) {
+  userService
+    .setDefaultCard(id)
+    .then((response) => {
+      toast.value.toast(response.data.msg, "#4caf50");
+    })
+    .catch((error) => {
+      toast.value.toast(error.message, "#FF5252");
+    })
+    .finally(() => {
+      emit("onUpdate");
+    });
+}
 
+function getDefaultCard(id) {
+  emit("onUpdate");
+  return user.value.stripe_default_payment_id == id;
+}
+
+function deleteCard(id) {
+  userService
+    .deleteCard(id)
+    .then((response) => {
+      console.log(response);
+    })
+    .catch((error) => {
+      toast.value.toast(error.message, "#FF5252");
+    })
+    .finally(() => {
+      dialog.value = false;
+    });
+}
 </script>

@@ -29,17 +29,11 @@
     <v-divider></v-divider>
 
     <v-card-actions class="justify-end">
-      <BaseButton
-        text="Cancel"
-        variant="outlined"
-        rounded="lg"
-        @click="$emit('onClose')"
-      />
-
+      <BaseButton text="Cancel" variant="outlined" @click="$emit('onClose')" />
       <BaseButton
         text="Create"
         color="secondary"
-        rounded="lg"
+        :loading="loading"
         @click="generateToken"
       />
     </v-card-actions>
@@ -48,46 +42,60 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import { loadStripe } from "@stripe/stripe-js";
 import userService from "@/services/userService";
 import Toast from "./Toast.vue";
 
-const stripe = ref();
+const emit = defineEmits(["onClose", "onUpdate"]);
 
+const stripe = ref();
 const toast = ref(null);
+const loading = ref(false);
 let cardNumber, cardExpiry, cardCvc;
 
 async function generateToken() {
+  loading.value = true;
   const { token, error } = await stripe.value.createToken(cardNumber);
+  console.log(token);
   if (error) {
     document.getElementById("card-error").innerHTML = error.message;
     return;
   }
-  addCard(token.type, token.id);
+  addCard(token.id, token.type);
 }
 
-async function addCard(type, id) {
+async function addCard(id, type) {
   userService
-    .addCard(type, id)
+    .addCard(id, type)
     .then((response) => {
       toast.value.toast(response.data.msg, "#4caf50");
     })
     .catch((response) => {
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
+    })
+    .finally(() => {
+      loading.value = false;
+      emit("onClose");
+      userService
+        .getCards()
+        .then((response) => {
+          const { data } = response.data;
+          console.log(data);
+          emit("onUpdate", data);
+        })
+        .catch((response) => {
+          const { err } = response.response.data;
+          toast.value.toast(err, "#FF5252");
+        });
     });
 }
 
-async function getStripe() {
-  stripe.value = await loadStripe(process.env.STRIPE_PUBLISHABLE_KEY);
-}
-
 onMounted(async () => {
-  await getStripe();
+  stripe.value = await loadStripe(`${process.env.PUBLISHABLE_KEY}`);
   const elements = stripe.value.elements();
-
   const style = {
     base: {
       color: "#fff",
@@ -110,6 +118,16 @@ onMounted(async () => {
 
   cardCvc = elements.create("cardCvc", { style });
   cardCvc.mount("#card-cvc");
+});
+
+onBeforeUnmount(() => {
+  if (cardNumber) cardNumber.unmount();
+  if (cardExpiry) cardExpiry.unmount();
+  if (cardCvc) cardCvc.unmount();
+
+  cardNumber = null;
+  cardExpiry = null;
+  cardCvc = null;
 });
 </script>
 

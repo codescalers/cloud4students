@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
     ],
     define: {
       "process.env": {
-        STRIPE_PUBLISHABLE_KEY: JSON.stringify(env.STRIPE_PUBLISHABLE_KEY),
+        PUBLISHABLE_KEY: env.STRIPE_PUBLISHABLE_KEY,
       },
       __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: true,
     },
