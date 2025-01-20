@@ -31,9 +31,9 @@
     <v-card-actions class="justify-end">
       <BaseButton text="Cancel" variant="outlined" @click="$emit('onClose')" />
       <BaseButton
+        :loading="loading"
         text="Create"
         color="secondary"
-        :loading="loading"
         @click="generateToken"
       />
     </v-card-actions>
@@ -48,18 +48,19 @@ import { loadStripe } from "@stripe/stripe-js";
 import userService from "@/services/userService";
 import Toast from "./Toast.vue";
 
-const emit = defineEmits(["onClose", "onUpdate"]);
+const emit = defineEmits(["onClose", "updateData"]);
 
 const stripe = ref();
 const toast = ref(null);
 const loading = ref(false);
+
 let cardNumber, cardExpiry, cardCvc;
 
 async function generateToken() {
   loading.value = true;
   const { token, error } = await stripe.value.createToken(cardNumber);
-  console.log(token);
   if (error) {
+    loading.value = false;
     document.getElementById("card-error").innerHTML = error.message;
     return;
   }
@@ -83,8 +84,7 @@ async function addCard(id, type) {
         .getCards()
         .then((response) => {
           const { data } = response.data;
-          console.log(data);
-          emit("onUpdate", data);
+          emit("updateData", data);
         })
         .catch((response) => {
           const { err } = response.response.data;
@@ -124,10 +124,6 @@ onBeforeUnmount(() => {
   if (cardNumber) cardNumber.unmount();
   if (cardExpiry) cardExpiry.unmount();
   if (cardCvc) cardCvc.unmount();
-
-  cardNumber = null;
-  cardExpiry = null;
-  cardCvc = null;
 });
 </script>
 

@@ -300,7 +300,9 @@ thead th {
 tbody tr {
   background-color: #474747;
 }
-.v-btn--disabled.bg-error {
+.v-btn--disabled.bg-error,
+.v-btn--disabled.bg-secondary,
+.v-btn--disabled.bg-info {
   background-color: transparent !important;
 }
 </style>

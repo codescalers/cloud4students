@@ -66,8 +66,15 @@
             />
 
             <v-chip-group v-model="selection" selected-class="bg-secondary">
-              <v-chip class="px-5" label variant="outlined">$50</v-chip>
-              <v-chip class="px-5" label variant="outlined">$100</v-chip>
+              <v-chip
+                v-for="amount in amounts"
+                :key="amount"
+                class="px-5"
+                :value="amount"
+                label
+                variant="outlined"
+                >${{ amount }}</v-chip
+              >
             </v-chip-group>
           </div>
           <v-divider></v-divider>
@@ -87,7 +94,7 @@
               type="submit"
               color="secondary"
               text="Charge your Balance"
-              :disabled="!verify"
+              :disabled="!amount || !selection"
             />
           </div>
         </v-form>
@@ -105,7 +112,6 @@ import Toast from "./Toast.vue";
 defineProps({
   cards: {
     type: Boolean,
-    default: false,
   },
 });
 const selection = ref(null);
@@ -115,9 +121,10 @@ const verifyVoucher = ref(false);
 const toast = ref(null);
 const user = inject("user");
 const balance = computed(() => user.value.balance);
+const paymentId = computed(() => user.value.stripe_default_payment_id);
 const voucher = ref();
-const amount = ref();
-const paymentId = ref();
+const amount = ref(0);
+const amounts = ref(["50", "100"]);
 
 function required(v) {
   return !!v || "Field is required";
@@ -139,15 +146,17 @@ function activateVoucher() {
       voucher.value = "";
     });
 }
-// FIXME payment_method_id? scenario?
 function chargeBalance() {
+  console.log(selection.value);
   userService
-    .chargeBalance(amount.value ? amount.value : selection, paymentId.value)
+    .chargeBalance(
+      amount.value ? amount.value : selection.value,
+      paymentId.value
+    )
     .then((response) => {
       console.log(response);
     })
     .catch((response) => {
-      console.log(response);
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
     });

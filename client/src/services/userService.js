@@ -119,10 +119,9 @@ export default {
   async setDefaultCard(payment_method_id) {
     return await authClient().put("/user/card/default", { payment_method_id });
   },
-  // FIXME define id?
-  async deleteCard(payment_method_id) {
-    console.log(payment_method_id)
-    return await authClient().delete("/user/card", { payment_method_id });
+
+  async deleteCard(id) {
+    return await authClient().delete(`/user/card/${id}`);
   },
 
   async changePassword(email, password, confirm_password) {
@@ -158,6 +157,14 @@ export default {
   // Invoices
   async getInvoices() {
     return await authClient().get("/invoice");
+  },
+
+  async payInvoice(id) {
+    return await authClient().put("/invoice/pay", { id });
+  },
+
+  async getInvoice(id) {
+    return await authClient().get("/invoice", { id });
   },
 
   // VM

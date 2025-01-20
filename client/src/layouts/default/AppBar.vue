@@ -23,7 +23,7 @@
           </router-link>
         </v-toolbar-title>
         <v-toolbar-items
-          v-if="user.length > 0"
+          v-if="menu.length > 0"
           class="hidden-xs-only d-flex align-center"
         >
           <v-btn
@@ -35,29 +35,11 @@
           >
             {{ item.title }}
           </v-btn>
-          <v-menu>
-            <template v-slot:activator="{ props }">
-              <v-btn v-bind="props" @click="setActive(index, props.title)">
-                <v-icon size="25">mdi-account</v-icon>
-              </v-btn>
-            </template>
-            <v-list>
-              <v-list-item>
-                <v-list-item-title>
-                  <router-link
-                    v-for="item in user"
-                    :key="item.title"
-                    :to="item.path"
-                    class="d-flex my-3 text-white text-decoration-none"
-                  >
-                    <span @click="checkTitle(item.title)">{{
-                      item.title
-                    }}</span>
-                  </router-link>
-                </v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
+
+          <v-btn class="text-capitalize" variant="text"
+            >Balance: ${{ balance }}</v-btn
+          >
+
           <v-menu id="notifications">
             <template v-slot:activator="{ props }">
               <v-btn class="mr-1 text-capitalize" v-bind="props">
@@ -119,6 +101,34 @@
               </v-list-item>
             </v-list>
           </v-menu>
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn
+                class="text-capitalize"
+                v-bind="props"
+                @click="setActive(index, props.title)"
+              >
+                <v-icon size="25" class="mr-2">mdi-account-circle-outline</v-icon>
+                {{ username }}
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item>
+                <v-list-item-title>
+                  <router-link
+                    v-for="item in menu"
+                    :key="item.title"
+                    :to="item.path"
+                    class="d-flex my-3 text-white text-decoration-none"
+                  >
+                    <span @click="checkTitle(item.title)">{{
+                      item.title
+                    }}</span>
+                  </router-link>
+                </v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </v-toolbar-items>
       </v-toolbar>
 
@@ -147,7 +157,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, inject, computed } from "vue";
 import userService from "@/services/userService";
 import { useRoute, useRouter } from "vue-router";
 import Toast from "@/components/Toast.vue";
@@ -164,6 +174,9 @@ export default {
     const maintenance = ref(localStorage.getItem("maintenance"));
     const notifications = ref([]);
     const toast = ref(null);
+    const user = inject("user");
+    const balance = computed(() => user.value.balance);
+    const username = computed(() => user.value.first_name);
     const excludedRoutes = ref([
       "/",
       "/login",
@@ -182,7 +195,7 @@ export default {
       },
     ]);
 
-    const user = ref([
+    const menu = ref([
       {
         title: "Account Management",
         path: "/account",
@@ -298,6 +311,9 @@ export default {
       getNotifications,
       seen,
       toast,
+      menu,
+      balance,
+      username,
     };
   },
 };

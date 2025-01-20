@@ -10,31 +10,33 @@
     <v-card-actions>
       <v-list-item class="w-100">
         <template v-slot:prepend>
-          <v-avatar rounded="0" size="40px">
+          <v-avatar rounded="0">
             <v-img :src="`/src/assets/cards_logos/${card.brand}.png`" />
           </v-avatar>
         </template>
 
-        <v-list-item-title class="text-capitalize text-medium-emphasis"
-          >{{ card.brand }} Card ending in {{ card.last_4 }}</v-list-item-title
-        >
+        <v-list-item-title class="text-capitalize">
+          {{ card.brand }} Card ending in {{ card.last_4 }}
+        </v-list-item-title>
 
-        <v-list-item-subtitle class="text-medium-emphasis"
-          >Expires
+        <v-list-item-subtitle class="text-medium-emphasis">
+          Expires
           {{ card.exp_month < 10 ? `0${card.exp_month}` : card.exp_month }}/{{
             card.exp_year.toString().slice(-2)
-          }}</v-list-item-subtitle
-        >
+          }}
+        </v-list-item-subtitle>
+
         <template v-slot:append>
           <BaseButton
             class="mx-5 text-normal"
             text="Set as default"
+            size="small"
             rounded
             color="info"
-            density="compact"
             :disabled="getDefaultCard(card.payment_method_id)"
             @click="setDefaultCard(card.payment_method_id)"
           />
+
           <div class="justify-self-end">
             <v-dialog v-model="dialog" max-width="500">
               <template v-slot:activator="{ props: activatorProps }">
@@ -43,7 +45,8 @@
                   class="me-1"
                   icon="mdi-trash-can-outline"
                   :disabled="cards.length == 1"
-                ></v-icon>
+                  @click="setItemToDelete(card)"
+                />
               </template>
 
               <template v-slot:default="{ isActive }">
@@ -62,18 +65,15 @@
                       @click="isActive.value = false"
                       variant="outlined"
                     />
-
                     <BaseButton
-                      type="submit"
                       text="Yes Delete"
                       color="error"
-                      @click="deleteCard(card.payment_method_id)"
+                      @click="deleteCard(itemToDelete)"
                     />
                   </v-card-actions>
                 </v-card>
               </template>
             </v-dialog>
-            {{ card }}
           </div>
         </template>
       </v-list-item>
@@ -82,53 +82,68 @@
   <Toast ref="toast" />
 </template>
 <script setup>
-import { ref, inject } from "vue";
+import { ref, inject, watch } from "vue";
 import BaseButton from "./Form/BaseButton.vue";
 import userService from "@/services/userService";
 import Toast from "./Toast.vue";
 
-defineProps({
+const props = defineProps({
   cards: {
     type: Array,
   },
 });
 
-const emit = defineEmits("onUpdate");
+const emit = defineEmits("updateData");
 
 const toast = ref();
 const dialog = ref(false);
 const user = inject("user");
+const itemToDelete = ref();
 
 function setDefaultCard(id) {
   userService
     .setDefaultCard(id)
     .then((response) => {
+      user.value.stripe_default_payment_id = id;
       toast.value.toast(response.data.msg, "#4caf50");
     })
     .catch((error) => {
       toast.value.toast(error.message, "#FF5252");
-    })
-    .finally(() => {
-      emit("onUpdate");
     });
 }
 
 function getDefaultCard(id) {
-  emit("onUpdate");
   return user.value.stripe_default_payment_id == id;
+}
+
+function setItemToDelete(card) {
+  itemToDelete.value = card.id;
+  dialog.value = true;
 }
 
 function deleteCard(id) {
   userService
     .deleteCard(id)
     .then((response) => {
-      console.log(response);
+      emit("updateData", response.data);
+      toast.value.toast(response.data.msg, "#4caf50");
     })
-    .catch((error) => {
-      toast.value.toast(error.message, "#FF5252");
+    .catch((response) => {
+      const { err } = response.response.data;
+      toast.value.toast(err, "#FF5252");
     })
     .finally(() => {
       dialog.value = false;
     });
 }
+
+watch(
+  props.cards,
+  () => {
+    if (props.cards.length == 1) {
+      setDefaultCard(props.cards[0].payment_method_id);
+    }
+  },
+  { immediate: true }
+);
 </script>

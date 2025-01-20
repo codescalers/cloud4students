@@ -9,11 +9,7 @@
       />
     </template>
 
-    <PaymentCard
-      title="Add a new payment method"
-      @on-update="updateData"
-      @on-close="dialog = false"
-    />
+    <PaymentCard @updateData="updateCards" @onClose="dialog = false" />
   </v-dialog>
 </template>
 <script setup>
@@ -24,7 +20,8 @@ import PaymentCard from "./PaymentCard.vue";
 const emit = defineEmits("updateData");
 const dialog = ref(false);
 
-function updateData(data) {
+function updateCards(data) {
+  if (!data) return;
   emit("updateData", data);
 }
 </script>

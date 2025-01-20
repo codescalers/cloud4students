@@ -43,13 +43,14 @@
   </v-container>
 </template>
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, inject } from "vue";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import userService from "@/services/userService";
 import Toast from "@/components/Toast.vue";
 const invoices = ref();
 const toast = ref(null);
 const message = ref();
+const user = inject("user");
 const headers = ref([
   {
     title: "Date",
@@ -77,12 +78,13 @@ function formatDate(date) {
   return [day, month, year].join("-");
 }
 
-// TODO handle invoices
+// TODO handle invoices InvoiceID
 function getInvoices() {
   userService
-    .getInvoices()
+    .getInvoice(user.value.user_id)
     .then((response) => {
       const { data, msg } = response.data;
+      console.log(data);
       invoices.value = data;
       message.value = msg;
     })

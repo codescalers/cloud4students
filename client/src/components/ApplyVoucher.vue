@@ -22,16 +22,16 @@
       <v-card class="pa-3">
         <v-card-title class="text-capitalize">Request new voucher</v-card-title>
         <v-divider />
-        <v-card-text>
+        <v-card-text class="pa-3">
           To help us process your request, please explain why you're applying
-          for the voucher.
+          for the voucher
         </v-card-text>
         <v-form v-model="verify" @submit.prevent="getVoucher">
           <BaseInput
             class="my-2"
             placeholder="Reason"
             v-model="reason"
-            required
+            :rules="[required]"
           />
           <div class="d-flex justify-end">
             <BaseButton
@@ -69,11 +69,9 @@ const balance = computed(() => user.value.balance);
 const toast = ref();
 const verify = ref(false);
 
-const voucherRules = ref([
-  (value) => {
-    if (!value) return "Voucher is required";
-  },
-]);
+function required(v) {
+  return !!v || "Field is required";
+}
 
 function getVoucher() {
   if (!verify.value) return;

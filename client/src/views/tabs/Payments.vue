@@ -1,14 +1,10 @@
 <template>
   <v-container>
-    <AddPayment @update-data="updateCards" />
+    <AddPayment @updateData="updateCards" />
 
     <v-divider />
 
-    <SavedCards
-      v-if="cards && cards.length > 0"
-      :cards="cards"
-      @on-update="updateCards"
-    />
+    <SavedCards :cards="cards" @updateData="updateCards" />
 
     <Alerts
       v-if="cards && cards.length == 1"
@@ -46,7 +42,8 @@ function getCards() {
 }
 
 function updateCards(data) {
-  cards.value = data;
+  if (!data) return;
+  getCards();
 }
 
 onMounted(() => {
