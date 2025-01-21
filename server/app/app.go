@@ -118,6 +118,7 @@ func (a *App) registerHandlers() {
 	userRouter := authRouter.PathPrefix("/user").Subrouter()
 	invoiceRouter := authRouter.PathPrefix("/invoice").Subrouter()
 	cardRouter := userRouter.PathPrefix("/card").Subrouter()
+	logRouter := userRouter.PathPrefix("/log").Subrouter()
 	notificationRouter := authRouter.PathPrefix("/notification").Subrouter()
 	vmRouter := authRouter.PathPrefix("/vm").Subrouter()
 	k8sRouter := authRouter.PathPrefix("/k8s").Subrouter()
@@ -155,6 +156,8 @@ func (a *App) registerHandlers() {
 	cardRouter.HandleFunc("/{id}", WrapFunc(a.DeleteCardHandler)).Methods("DELETE", "OPTIONS")
 	cardRouter.HandleFunc("", WrapFunc(a.ListCardHandler)).Methods("GET", "OPTIONS")
 	cardRouter.HandleFunc("/default", WrapFunc(a.SetDefaultCardHandler)).Methods("PUT", "OPTIONS")
+
+	logRouter.HandleFunc("", WrapFunc(a.ListLogsHandler)).Methods("GET", "OPTIONS")
 
 	invoiceRouter.HandleFunc("", WrapFunc(a.ListInvoicesHandler)).Methods("GET", "OPTIONS")
 	invoiceRouter.HandleFunc("/{id}", WrapFunc(a.GetInvoiceHandler)).Methods("GET", "OPTIONS")
@@ -204,10 +207,10 @@ func (a *App) registerHandlers() {
 	voucherRouter.HandleFunc("/all/reset", WrapFunc(a.ResetUsersVoucherBalanceHandler)).Methods("PUT", "OPTIONS")
 
 	// middlewares
-	r.Use(middlewares.LoggingMW)
 	r.Use(middlewares.EnableCors)
 
 	authRouter.Use(middlewares.Authorization(a.db, a.config.Token.Secret, a.config.Token.Timeout))
+	authRouter.Use(middlewares.AuditLogMiddleware(a.db))
 	adminRouter.Use(middlewares.AdminAccess(a.db))
 
 	// prometheus registration
