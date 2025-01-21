@@ -170,6 +170,11 @@ func (d *Deployer) loadK8s(
 		return models.K8sCluster{}, err
 	}
 
+	if err := logK8sCreate(d.db, k8s.UserID, k8s.ID); err != nil {
+		log.Error().Err(err).Send()
+		return models.K8sCluster{}, err
+	}
+
 	return k8s, nil
 }
 

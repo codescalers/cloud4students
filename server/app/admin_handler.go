@@ -169,6 +169,11 @@ func (a *App) SetPricesHandler(req *http.Request) (interface{}, Response) {
 		a.config.PricesPerMonth.PublicIP = input.PublicIP
 	}
 
+	if err := a.logVMsPriceUpdate(req, a.config.PricesPerMonth); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "New prices are set",
 		Data:    nil,
@@ -314,6 +319,11 @@ func (a *App) DeleteAllDeploymentsHandler(req *http.Request) (interface{}, Respo
 		}
 	}
 
+	if err := a.logAllDeploymentsDelete(req); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "Deployments are deleted successfully",
 	}, Ok()
@@ -416,6 +426,11 @@ func (a *App) UpdateMaintenanceHandler(req *http.Request) (interface{}, Response
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logMaintenanceUpdate(req, input.ON); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "Maintenance is updated successfully",
 		Data:    nil,
@@ -473,6 +488,11 @@ func (a *App) SetAdminHandler(req *http.Request) (interface{}, Response) {
 	}
 
 	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	if err := a.logAdminSet(req, user.ID.String(), input.Admin); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
@@ -537,6 +557,11 @@ func (a *App) CreateNewAnnouncementHandler(req *http.Request) (interface{}, Resp
 		}
 	}
 
+	if err := a.logAnnouncementCreate(req, adminAnnouncement.Subject); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "new announcement is sent successfully",
 	}, Created()
@@ -598,6 +623,11 @@ func (a *App) SendEmailHandler(req *http.Request) (interface{}, Response) {
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logEmailSent(req, user.ID.String(), emailUser.Subject); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "new email is sent successfully",
 	}, Created()
@@ -632,6 +662,11 @@ func (a *App) UpdateNextLaunchHandler(req *http.Request) (interface{}, Response)
 	}
 
 	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	if err := a.logNextLaunchUpdate(req, input.Launched); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}

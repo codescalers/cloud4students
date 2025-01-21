@@ -32,7 +32,7 @@ func (d *DB) Migrate() error {
 	err := d.db.AutoMigrate(
 		&User{}, &State{}, &Card{}, &Invoice{}, &VM{}, &K8sCluster{}, &Master{}, &Worker{},
 		&Voucher{}, &Maintenance{}, &Notification{}, &NextLaunch{}, &DeploymentItem{}, &PaymentDetails{},
-		AuditLog{},
+		AuditLog{}, AuditEvent{},
 	)
 	if err != nil {
 		return err

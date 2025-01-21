@@ -119,6 +119,7 @@ func (a *App) registerHandlers() {
 	invoiceRouter := authRouter.PathPrefix("/invoice").Subrouter()
 	cardRouter := userRouter.PathPrefix("/card").Subrouter()
 	logRouter := userRouter.PathPrefix("/log").Subrouter()
+	eventRouter := userRouter.PathPrefix("/event").Subrouter()
 	notificationRouter := authRouter.PathPrefix("/notification").Subrouter()
 	vmRouter := authRouter.PathPrefix("/vm").Subrouter()
 	k8sRouter := authRouter.PathPrefix("/k8s").Subrouter()
@@ -158,6 +159,8 @@ func (a *App) registerHandlers() {
 	cardRouter.HandleFunc("/default", WrapFunc(a.SetDefaultCardHandler)).Methods("PUT", "OPTIONS")
 
 	logRouter.HandleFunc("", WrapFunc(a.ListLogsHandler)).Methods("GET", "OPTIONS")
+
+	eventRouter.HandleFunc("", WrapFunc(a.ListEventsHandler)).Methods("GET", "OPTIONS")
 
 	invoiceRouter.HandleFunc("", WrapFunc(a.ListInvoicesHandler)).Methods("GET", "OPTIONS")
 	invoiceRouter.HandleFunc("/{id}", WrapFunc(a.GetInvoiceHandler)).Methods("GET", "OPTIONS")

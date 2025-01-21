@@ -174,10 +174,20 @@ func (a *App) DownloadInvoiceHandler(req *http.Request) (interface{}, Response) 
 			log.Error().Err(err).Send()
 			return nil, InternalServerError(errors.New(internalServerErrorMsg))
 		}
+
+		if err := a.logInvoicePDFUpdate(req, invoice.ID); err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
 	}
 
 	if userID != invoice.UserID {
 		return nil, NotFound(errors.New("invoice is not found"))
+	}
+
+	if err := a.logInvoiceDownload(req, invoice.ID); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
 	return invoice.FileData, Ok().
@@ -430,6 +440,10 @@ func (a *App) createInvoice(user models.User, now time.Time) error {
 		if err = a.db.CreateInvoice(&in); err != nil {
 			return err
 		}
+
+		if err := a.logInvoiceCreate(user.ID.String(), a.config.Currency, in.ID, in.Total, in.CreatedAt); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -451,10 +465,18 @@ func (a *App) deleteInvoiceDeploymentsNotPaidSince3Months(userID string, now tim
 					if err = a.db.DeleteVMByID(dl.DeploymentID); err != nil {
 						log.Error().Err(err).Send()
 					}
+
+					if err := a.logVMDelete(userID, systemRole, dl.DeploymentID, dl.DeploymentCreatedAt); err != nil {
+						log.Error().Err(err).Send()
+					}
 				}
 
 				if dl.DeploymentType == "k8s" {
 					if err = a.db.DeleteK8s(dl.DeploymentID); err != nil {
+						log.Error().Err(err).Send()
+					}
+
+					if err := a.logK8sDelete(userID, systemRole, dl.DeploymentID, dl.DeploymentCreatedAt); err != nil {
 						log.Error().Err(err).Send()
 					}
 				}
@@ -669,11 +691,21 @@ func (a *App) payInvoice(user *models.User, cardPaymentID string, method method,
 			log.Error().Err(err).Send()
 			return InternalServerError(errors.New(internalServerErrorMsg))
 		}
+
+		if err := a.logVoucherBalanceUpdate(user.ID.String(), a.config.Currency, systemRole, user.VoucherBalance); err != nil {
+			log.Error().Err(err).Send()
+			return InternalServerError(errors.New(internalServerErrorMsg))
+		}
 	}
 
 	// invoice used balance
 	if paymentDetails.Balance != 0 {
 		if err = a.db.UpdateUserBalance(user.ID.String(), user.Balance); err != nil {
+			log.Error().Err(err).Send()
+			return InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
+		if err := a.logBalanceUpdate(user.ID.String(), a.config.Currency, systemRole, user.Balance); err != nil {
 			log.Error().Err(err).Send()
 			return InternalServerError(errors.New(internalServerErrorMsg))
 		}
@@ -685,6 +717,11 @@ func (a *App) payInvoice(user *models.User, cardPaymentID string, method method,
 		return NotFound(errors.New("invoice is not found"))
 	}
 	if err != nil {
+		log.Error().Err(err).Send()
+		return InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	if err := a.logInvoicePayment(user.ID.String(), a.config.Currency, invoiceTotal, paymentDetails); err != nil {
 		log.Error().Err(err).Send()
 		return InternalServerError(errors.New(internalServerErrorMsg))
 	}

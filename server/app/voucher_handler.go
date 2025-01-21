@@ -68,6 +68,11 @@ func (a *App) GenerateVoucherHandler(req *http.Request) (interface{}, Response) 
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logVoucherCreate(v.UserID, v.Voucher, v.Balance); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "Voucher is generated successfully",
 		Data:    map[string]string{"voucher": voucher},
@@ -182,6 +187,11 @@ func (a *App) UpdateVoucherHandler(req *http.Request) (interface{}, Response) {
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logVoucherUpdate(voucher.UserID, voucher.Voucher, voucher.Balance, input.Approved); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "Update mail has been sent to the user",
 		Data:    nil,
@@ -233,6 +243,11 @@ func (a *App) ApproveAllVouchersHandler(req *http.Request) (interface{}, Respons
 			log.Error().Err(err).Send()
 			return nil, InternalServerError(errors.New(internalServerErrorMsg))
 		}
+
+		if err := a.logVoucherUpdate(v.UserID, v.Voucher, v.Balance, true); err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
 	}
 
 	return ResponseMsg{
@@ -266,6 +281,11 @@ func (a *App) ResetUsersVoucherBalanceHandler(req *http.Request) (interface{}, R
 	for _, user := range users {
 		err = a.db.UpdateUserVoucherBalance(user.ID.String(), 0)
 		if err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
+		if err := a.logVoucherReset(user.ID.String(), user.VoucherBalance); err != nil {
 			log.Error().Err(err).Send()
 			return nil, InternalServerError(errors.New(internalServerErrorMsg))
 		}

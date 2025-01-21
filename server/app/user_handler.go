@@ -251,6 +251,11 @@ func (a *App) VerifySignUpCodeHandler(req *http.Request) (interface{}, Response)
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logUserCreated(user.ID.String()); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "Account is created successfully.",
 	}, Created()
@@ -298,6 +303,11 @@ func (a *App) SignInHandler(req *http.Request) (interface{}, Response) {
 
 	token, err := internal.CreateJWT(user.ID.String(), user.Email, a.config.Token.Secret, a.config.Token.Timeout)
 	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	if err := a.logUserSignedIn(user.ID.String()); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
@@ -502,6 +512,8 @@ func (a *App) VerifyForgetPasswordCodeHandler(req *http.Request) (interface{}, R
 // @Failure 500 {object} Response
 // @Router /user/change_password [put]
 func (a *App) ChangePasswordHandler(req *http.Request) (interface{}, Response) {
+	userID := req.Context().Value(middlewares.UserIDKey("UserID")).(string)
+
 	var data ChangePasswordInput
 	err := json.NewDecoder(req.Body).Decode(&data)
 	if err != nil {
@@ -530,6 +542,11 @@ func (a *App) ChangePasswordHandler(req *http.Request) (interface{}, Response) {
 		return nil, NotFound(errors.New("user is not found"))
 	}
 	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	if err := a.logUserPasswordUpdate(userID); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
@@ -633,6 +650,11 @@ func (a *App) UpdateUserHandler(req *http.Request) (interface{}, Response) {
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logUserUpdate(userID); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "User is updated successfully",
 	}, Ok()
@@ -722,6 +744,11 @@ func (a *App) ApplyForVoucherHandler(req *http.Request) (interface{}, Response) 
 	}
 	middlewares.VoucherApplied.WithLabelValues(userID, voucher.Voucher, fmt.Sprint(voucher.Balance)).Inc()
 
+	if err := a.logUserVoucherApply(userID, a.config.Currency, input.Balance); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "Voucher request is being reviewed, you'll receive a confirmation mail soon",
 		Data:    nil,
@@ -805,14 +832,29 @@ func (a *App) ActivateVoucherHandler(req *http.Request) (interface{}, Response) 
 		}
 	}
 
+	if err := a.logUserVoucherActivate(userID, a.config.Currency, voucherBalance.Voucher, voucherBalance.Balance); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	err = a.db.UpdateUserVoucherBalance(user.ID.String(), user.VoucherBalance)
 	if err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logVoucherBalanceUpdate(userID, a.config.Currency, userRole, user.VoucherBalance); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	err = a.db.UpdateUserBalance(user.ID.String(), user.Balance)
 	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	if err := a.logBalanceUpdate(userID, a.config.Currency, userRole, user.Balance); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
@@ -872,6 +914,11 @@ func (a *App) ChargeBalance(req *http.Request) (interface{}, Response) {
 
 	user.Balance += float64(input.Amount)
 
+	if err := a.logBalanceCharge(userID, a.config.Currency, input.Amount); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	// try to settle old invoices
 	invoices, err := a.db.ListUnpaidInvoices(user.ID.String())
 	if err != nil {
@@ -892,8 +939,18 @@ func (a *App) ChargeBalance(req *http.Request) (interface{}, Response) {
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logBalanceUpdate(userID, a.config.Currency, userRole, user.Balance); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	err = a.db.UpdateUserVoucherBalance(user.ID.String(), user.VoucherBalance)
 	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	if err := a.logVoucherBalanceUpdate(userID, a.config.Currency, userRole, user.Balance); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
@@ -996,6 +1053,11 @@ func (a *App) DeleteUserHandler(req *http.Request) (interface{}, Response) {
 			log.Error().Err(err).Send()
 			return nil, InternalServerError(errors.New(internalServerErrorMsg))
 		}
+
+		if err := a.logVMDelete(userID, userRole, vm.ID, vm.CreatedAt); err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
 	}
 
 	err = a.db.DeleteAllVms(userID)
@@ -1014,6 +1076,11 @@ func (a *App) DeleteUserHandler(req *http.Request) (interface{}, Response) {
 	for _, cluster := range clusters {
 		err = a.deployer.CancelDeployment(uint64(cluster.ClusterContract), uint64(cluster.NetworkContract), "k8s", cluster.Master.Name)
 		if err != nil && !strings.Contains(err.Error(), "ContractNotExists") {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
+		if err := a.logK8sDelete(userID, userRole, cluster.ID, cluster.CreatedAt); err != nil {
 			log.Error().Err(err).Send()
 			return nil, InternalServerError(errors.New(internalServerErrorMsg))
 		}
@@ -1040,6 +1107,11 @@ func (a *App) DeleteUserHandler(req *http.Request) (interface{}, Response) {
 			log.Error().Err(err).Send()
 			return nil, InternalServerError(errors.New(internalServerErrorMsg))
 		}
+
+		if err := a.logCardDelete(userID, card.Last4); err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
 	}
 
 	err = a.db.DeleteAllCards(userID)
@@ -1056,6 +1128,11 @@ func (a *App) DeleteUserHandler(req *http.Request) (interface{}, Response) {
 		return nil, NotFound(errors.New("user is not found"))
 	}
 	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	if err := a.logUserDelete(userID); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}

@@ -137,6 +137,10 @@ func (d *Deployer) deployVMRequest(ctx context.Context, user models.User, vm mod
 		return http.StatusInternalServerError, err, errors.New(internalServerErrorMsg)
 	}
 
+	if err := logVMCreate(d.db, vm.UserID, vm.ID); err != nil {
+		return http.StatusInternalServerError, err, errors.New(internalServerErrorMsg)
+	}
+
 	middlewares.Deployments.WithLabelValues(user.ID.String(), vm.Resources, "vm").Inc()
 	return 0, nil, nil
 }
