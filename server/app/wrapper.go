@@ -73,9 +73,7 @@ func WrapFunc(a Handler) http.HandlerFunc {
 			if _, err := w.Write(bytes); err != nil {
 				log.Error().Err(err).Msg("failed to write return object")
 			}
-		}
-
-		if err := json.NewEncoder(w).Encode(object); err != nil {
+		} else if err := json.NewEncoder(w).Encode(object); err != nil {
 			log.Error().Err(err).Msg("failed to encode return object")
 		}
 		middlewares.Requests.WithLabelValues(r.Method, r.RequestURI, fmt.Sprint(status)).Inc()

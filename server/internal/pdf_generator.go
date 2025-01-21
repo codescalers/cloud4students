@@ -52,7 +52,11 @@ func CreateInvoicePDF(
 		return nil, errors.Wrap(err, "failed to set fonts")
 	}
 
-	return pdf.GetBytesPdf(), errors.Wrap(invoicePDF.draw(), "failed to draw pdf")
+	if err := invoicePDF.draw(); err != nil {
+		return nil, errors.Wrap(err, "failed to draw pdf")
+	}
+
+	return pdf.GetBytesPdf(), nil
 }
 
 func (in *InvoicePDF) setFonts() error {

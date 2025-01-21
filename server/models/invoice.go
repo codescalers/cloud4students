@@ -75,6 +75,10 @@ func (d *DB) UpdateInvoiceLastRemainderDate(id int) error {
 	return d.db.Model(&Invoice{}).Where("id = ?", id).Updates(map[string]interface{}{"last_reminder_at": time.Now()}).Error
 }
 
+func (d *DB) UpdateInvoicePDF(id int, data []byte) error {
+	return d.db.Model(&Invoice{}).Where("id = ?", id).Updates(map[string]interface{}{"file_data": data}).Error
+}
+
 // PayInvoice updates paid with true and paid at field with current time in the invoice
 func (d *DB) PayInvoice(id int, payment PaymentDetails) error {
 	var invoice Invoice

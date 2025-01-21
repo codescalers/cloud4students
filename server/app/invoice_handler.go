@@ -152,6 +152,30 @@ func (a *App) DownloadInvoiceHandler(req *http.Request) (interface{}, Response) 
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	// Creating pdf for invoice if it doesn't have it
+	if len(invoice.FileData) == 0 {
+		user, err := a.db.GetUserByID(userID)
+		if err == gorm.ErrRecordNotFound {
+			return nil, NotFound(errors.New("user is not found"))
+		}
+		if err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
+		pdfContent, err := internal.CreateInvoicePDF(invoice, user)
+		if err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
+		invoice.FileData = pdfContent
+		if err := a.db.UpdateInvoicePDF(id, invoice.FileData); err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+	}
+
 	if userID != invoice.UserID {
 		return nil, NotFound(errors.New("invoice is not found"))
 	}
