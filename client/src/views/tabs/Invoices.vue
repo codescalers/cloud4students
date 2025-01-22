@@ -2,7 +2,7 @@
   <v-container>
     <v-row class="d-flex justify-end my-5">
       <BaseButton
-        @click="downloadAll"
+        @click="downloadAllInvoices"
         text="Download All"
         prepend-icon="mdi-download"
         :disabled="invoices == 0"
@@ -27,7 +27,7 @@
 
           <template #[`item.download`]="{ item }">
             <BaseButton
-              @click="downloadInvoice(item)"
+              @click="downloadInvoice(item.id)"
               text="Download"
               prepend-icon="mdi-download"
               variant="text"
@@ -44,13 +44,17 @@
 </template>
 <script setup>
 import { ref, onMounted, inject } from "vue";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import userService from "@/services/userService";
 import Toast from "@/components/Toast.vue";
+
 const invoices = ref();
 const toast = ref(null);
 const message = ref();
 const user = inject("user");
+
 const headers = ref([
   {
     title: "Date",
@@ -84,7 +88,6 @@ function getInvoices() {
     .getInvoice(user.value.user_id)
     .then((response) => {
       const { data, msg } = response.data;
-      console.log(data);
       invoices.value = data;
       message.value = msg;
     })
@@ -92,6 +95,56 @@ function getInvoices() {
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
     });
+}
+
+function downloadInvoice(id) {
+  userService
+    .downloadInvoice(id)
+    .then(async (response) => {
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "download.pdf");
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    })
+    .catch((response) => {
+      toast.value.toast(response, "#FF5252");
+    });
+}
+
+async function downloadAllInvoices() {
+  const zip = new JSZip();
+  const promises = [];
+
+  for (const invoice of invoices.value) {
+    promises.push(
+      userService
+        .downloadInvoice(invoice.id)
+        .then((response) => {
+          const blob = new Blob([response.data], { type: "application/pdf" });
+          zip.file(`invoice_${invoice.id}.pdf`, blob);
+        })
+        .catch((error) => {
+          toast.value.toast(
+            `Error downloading invoice ${invoice.id}: ${error}`,
+            "#FF5252"
+          );
+        })
+    );
+  }
+
+  await Promise.all(promises);
+
+  zip.generateAsync({ type: "blob" }).then((content) => {
+    saveAs(content, "invoices.zip");
+  });
 }
 
 onMounted(() => getInvoices());

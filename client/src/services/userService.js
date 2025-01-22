@@ -167,6 +167,12 @@ export default {
     return await authClient().get("/invoice", { id });
   },
 
+  async downloadInvoice(id) {
+    return await authClient().get(`/invoice/download/${id}`, {
+      responseType: "blob",
+    });
+  },
+
   // VM
   async getVms() {
     return await authClient().get("/vm");
