@@ -22,7 +22,7 @@
           </template>
 
           <template #[`item.invoice`]="{ item }">
-            {{ item.user_id }}
+            {{ item.userID }}
           </template>
 
           <template #[`item.download`]="{ item }">
@@ -43,17 +43,21 @@
   </v-container>
 </template>
 <script setup>
-import { ref, onMounted, inject } from "vue";
+import { ref, onMounted } from "vue";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import userService from "@/services/userService";
 import Toast from "@/components/Toast.vue";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/store/UserStore";
 
 const invoices = ref();
 const toast = ref(null);
 const message = ref();
-const user = inject("user");
+const store = useUserStore();
+const { user } = storeToRefs(store);
+const userID = ref(user.value.id);
 
 const headers = ref([
   {
@@ -85,7 +89,7 @@ function formatDate(date) {
 // TODO handle invoices InvoiceID
 function getInvoices() {
   userService
-    .getInvoice(user.value.user_id)
+    .getInvoice(userID.value)
     .then((response) => {
       const { data, msg } = response.data;
       invoices.value = data;

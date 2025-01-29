@@ -25,7 +25,7 @@ const startTokenRefreshInterval = function (timeout) {
 
 export default {
   async refresh_token() {
-    await authClient()
+    return await authClient()
       .post("/user/refresh_token")
       .then((response) => {
         const { refresh_token } = response.data.data;
@@ -60,8 +60,7 @@ export default {
         password,
       })
       .then((res) => {
-        const { access_token, timeout } = res.data.data;
-        localStorage.setItem("token", access_token);
+        const { timeout } = res.data.data;
         startTokenRefreshInterval.call(this, timeout);
         return res;
       });
@@ -286,47 +285,12 @@ export default {
 
   // maintenance
   async maintenance() {
-    await baseClient()
-      .get("/maintenance")
-      .then((response) => {
-        const { data } = response.data;
-        localStorage.setItem("maintenance", data.active);
-      })
-      .catch((response) => {
-        const { err } = response.response.data;
-        console.log(err);
-      });
+    return await baseClient().get("/maintenance");
   },
 
   // getting nextlaunch value
-  async nextlaunch() {
-    return await baseClient()
-      .get("/nextlaunch")
-      .then((response) => {
-        const { data } = response.data;
-        localStorage.setItem("nextlaunch", data.launched);
-        localStorage.setItem("nextlaunchadmin", data.launched);
-      })
-      .catch((response) => {
-        const { err } = response.response.data;
-        console.log(err);
-      });
-  },
-
-  // handler function of nextlaunch
-  async handleNextLaunch() {
-    await this.getUser()
-      .then((response) => {
-        const { user } = response.data.data;
-        const isAdmin = user.admin;
-        if (isAdmin) {
-          localStorage.setItem("nextlaunch", "true");
-        }
-      })
-      .catch((response) => {
-        const { err } = response.response.data;
-        console.log(err);
-      });
+  async nextLaunch() {
+    return await baseClient().get("/nextlaunch");
   },
 
   // setting next launch value

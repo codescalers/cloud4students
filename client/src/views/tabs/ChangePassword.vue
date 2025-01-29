@@ -73,11 +73,13 @@
   </v-container>
 </template>
 <script setup>
-import { ref, inject } from "vue";
+import { ref } from "vue";
 import BaseInput from "@/components/Form/BaseInput.vue";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import Toast from "@/components/Toast.vue";
 import userService from "@/services/userService";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/store/UserStore";
 
 const newPass = ref();
 const confirmPass = ref();
@@ -85,7 +87,9 @@ const toast = ref();
 const verify = ref(false);
 const visible = ref(false);
 const cShowPassword = ref(false);
-const user = inject("user");
+const store = useUserStore();
+const { user } = storeToRefs(store);
+const email = ref(user.value.email);
 const form = ref();
 
 const passwordRules = ref([
@@ -107,7 +111,7 @@ const cPasswordRules = ref([
 
 function updatePassword() {
   userService
-    .changePassword(user.value.email, newPass.value, confirmPass.value)
+    .changePassword(email.value, newPass.value, confirmPass.value)
     .then((response) => {
       toast.value.toast(response.data.msg, "#4caf50");
     })

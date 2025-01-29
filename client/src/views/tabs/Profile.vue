@@ -56,17 +56,20 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { ref, watch } from "vue";
 import userService from "@/services/userService";
 import BaseInput from "@/components/Form/BaseInput.vue";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import Toast from "@/components/Toast.vue";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/store/UserStore";
 
-const email = ref("");
-const firstName = ref("");
-const sshKey = ref("");
+const store = useUserStore();
+const { user } = storeToRefs(store);
+const email = ref(user.value.email);
+const firstName = ref(user.value.first_name);
+const sshKey = ref(user.value.ssh_key);
 const toast = ref();
-const verified = ref(false);
 const verify = ref(false);
 
 const nameValidation = ref([
@@ -85,28 +88,12 @@ const requiredRules = ref([
   },
 ]);
 
-function getUser() {
-  userService
-    .getUser()
-    .then((response) => {
-      const { user } = response.data.data;
-      email.value = user.email;
-      firstName.value = user.first_name;
-      verified.value = user.verified;
-      sshKey.value = user.ssh_key;
-    })
-    .catch((response) => {
-      const { err } = response.response.data;
-      toast.value.toast(err, "#FF5252");
-    });
-}
-
 function update() {
   userService
     .updateUser(firstName.value, sshKey.value)
-    .then((response) => {
+    .then(async (response) => {
       toast.value.toast(response.data.msg, "#4caf50");
-      getUser();
+      await store.getUserInfo();
     })
     .catch((response) => {
       const { err } = response.response.data;
@@ -117,10 +104,17 @@ function update() {
     });
 }
 
-onMounted(() => {
-  const token = localStorage.getItem("token");
-  if (token) getUser();
-});
+watch(
+  user,
+  (newVal) => {
+    if (newVal) {
+      firstName.value = newVal.first_name;
+      email.value = newVal.email;
+      sshKey.value = newVal.ssh_key;
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style>

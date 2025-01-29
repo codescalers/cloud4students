@@ -1,10 +1,10 @@
 // Composables
 import { createRouter, createWebHistory } from "vue-router";
+import { useUserStore } from "@/store/UserStore";
 import Account from "@/views/Account.vue";
 import VM from "@/views/VM.vue";
 import Admin from "@/views/Admin.vue";
 import NewPassword from "@/views/Newpassword.vue";
-import userService from "@/services/userService.js";
 import ProfileTab from "@/views/tabs/Profile.vue";
 import PaymentsTab from "@/views/tabs/Payments.vue";
 import Invoices from "@/views/tabs/Invoices.vue";
@@ -76,7 +76,7 @@ const routes = [
     name: "NextLaunch",
     component: () => import("@/views/NextLaunch.vue"),
     meta: {
-      requiredAuth: true,
+      requiresAuth: true,
       layout: "NoNavbar",
     },
   },
@@ -86,7 +86,7 @@ const routes = [
     component: Home,
     meta: {
       layout: "Default",
-      requiredAuth: true,
+      requiresAuth: true,
     },
   },
   {
@@ -95,7 +95,7 @@ const routes = [
     component: NewPassword,
     meta: {
       layout: "Default",
-      requiredAuth: true,
+      requiresAuth: true,
     },
   },
   {
@@ -103,7 +103,7 @@ const routes = [
     name: "VM",
     component: VM,
     meta: {
-      requiredAuth: true,
+      requiresAuth: true,
       layout: "Default",
     },
   },
@@ -112,7 +112,7 @@ const routes = [
     component: Account,
     meta: {
       layout: "Default",
-      requiredAuth: true,
+      requiresAuth: true,
     },
     children: [
       {
@@ -147,7 +147,7 @@ const routes = [
     component: Deploy,
     meta: {
       layout: "Default",
-      requiredAuth: true,
+      requiresAuth: true,
     },
   },
   {
@@ -156,7 +156,7 @@ const routes = [
     component: Admin,
     meta: {
       layout: "Default",
-      requiredAuth: true,
+      requiresAuth: true,
     },
   },
   {
@@ -180,18 +180,24 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  const requiredAuth = to.matched.some((record) => record.meta.requiredAuth);
-  const token = localStorage.getItem("token");
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+  const isAuthenticated = localStorage.getItem("token");
+  const store = useUserStore();
 
-  await userService.refresh_token();
-  await userService.maintenance();
-  await userService.nextlaunch();
-  await userService.handleNextLaunch();
+  if (store.maintenance && to.name == "Maintenance") {
+    next({ name: "Maintenance" });
+    return;
+  }
 
-  if (requiredAuth && !token) {
+  // Ensure the store is loaded
+  if (!store.isStoreLoaded) {
+    await store.getUserInfo();
+  }
+
+  if (requiresAuth && !isAuthenticated) {
     next("/home");
-  } else if (to.path === "/login" && token) {
-    next({ path: "/" });
+  } else if (to.path === "/login" && isAuthenticated) {
+    next({ name: "Home" });
   } else {
     next();
   }

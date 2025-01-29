@@ -78,11 +78,11 @@
 import { ref } from "vue";
 import Toast from "@/components/Toast.vue";
 import { useRouter } from "vue-router";
-import userService from "@/services/userService";
 import logo from "@/assets/logo_c4all.png";
 import signin from "@/assets/sign-in.png";
 import BaseInput from "@/components/Form/BaseInput.vue";
 import BaseButton from "@/components/Form/BaseButton.vue";
+import { useUserStore } from "@/store/UserStore";
 
 const router = useRouter();
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -91,6 +91,7 @@ const toast = ref(null);
 const visible = ref(false);
 const email = ref(null);
 const password = ref(null);
+const store = useUserStore();
 
 const register = () => {
   router.push({
@@ -113,14 +114,15 @@ const passwordRules = ref([
   },
 ]);
 
-const onSubmit = () => {
+const onSubmit = async () => {
   if (!verify.value) return;
-  userService.nextlaunch();
-  userService
-    .signIn(email.value, password.value)
-    .then((response) => {
+  await store.getNextLaunch();
+  await store.checkMaintenance();
+  await store
+    .login(email.value, password.value)
+    .then(async (response) => {
+      await store.getUserInfo();
       toast.value.toast(response.data.msg, "#4caf50");
-      adminCheck();
       router.push({
         path: "/",
       });
@@ -129,8 +131,4 @@ const onSubmit = () => {
       toast.value.toast(error.response.data.err, "#FF5252");
     });
 };
-
-async function adminCheck() {
-  await userService.handleNextLaunch();
-}
 </script>

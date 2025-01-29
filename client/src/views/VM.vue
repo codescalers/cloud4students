@@ -127,16 +127,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject, computed } from "vue";
+import { ref, onMounted } from "vue";
 import userService from "@/services/userService";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import Toast from "@/components/Toast.vue";
 import Alerts from "@/components/Alerts.vue";
 import Confirm from "@/components/Confirm.vue";
-
+import { useUserStore } from "@/store/UserStore";
 import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
 
-const emitter = inject("emitter");
+// const emitter = inject("emitter");
 const deleteAllDialog = ref(null);
 const deleteDialog = ref(null);
 const router = useRouter();
@@ -146,8 +147,8 @@ const deLoading = ref(false);
 const message = ref(null);
 const itemToDelete = ref(null);
 const loading = ref(false);
-const user = inject("user");
-const sshKey = computed(() => user.value.ssh_key);
+const { user } = storeToRefs(useUserStore());
+const sshKey = ref(user.value.ssh_key);
 const alert = ref(sshKey.value == "");
 
 const headers = ref([
@@ -263,20 +264,20 @@ const setItemToDelete = (item) => {
   deleteDialog.value = true;
 };
 
-const emitQuota = () => {
-  emitter.emit("userUpdateQuota", true);
-};
+// const emitQuota = () => {
+//   emitter.emit("userUpdateQuota", true);
+// };
 
 const copyIP = (ip) => {
   navigator.clipboard.writeText(ip);
   toast.value.toast("IP Copied", "#388E3C");
 };
 
-if (localStorage.getItem("token")) {
-  setInterval(() => {
-    emitQuota();
-  }, 30 * 1000);
-}
+// if (localStorage.getItem("token")) {
+//   setInterval(() => {
+//     emitQuota();
+//   }, 30 * 1000);
+// }
 
 function createVM() {
   router.push({

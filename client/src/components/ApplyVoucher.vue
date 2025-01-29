@@ -56,16 +56,17 @@
 </template>
 
 <script setup>
-import { inject, computed, ref } from "vue";
+import { ref } from "vue";
 import BaseButton from "./Form/BaseButton.vue";
 import BaseInput from "./Form/BaseInput.vue";
 import userService from "@/services/userService";
 import Toast from "./Toast.vue";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/store/UserStore";
 
 const dialog = ref(false);
 const reason = ref();
-const user = inject("user");
-const balance = computed(() => user.value.balance);
+const { user } = storeToRefs(useUserStore());
 const toast = ref();
 const verify = ref(false);
 
@@ -76,7 +77,7 @@ function required(v) {
 function getVoucher() {
   if (!verify.value) return;
   userService
-    .applyVoucher(balance.value, reason.value)
+    .applyVoucher(user.value.balance, reason.value)
     .then((response) => {
       toast.value.toast(response.data.msg, "#4caf50");
     })

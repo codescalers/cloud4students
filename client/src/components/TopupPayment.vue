@@ -63,9 +63,14 @@
               class="mr-5"
               v-model="amount"
               hide-details
+              :disabled="selection"
             />
 
-            <v-chip-group v-model="selection" selected-class="bg-secondary">
+            <v-chip-group
+              v-model="selection"
+              :disabled="amount > 0"
+              selected-class="bg-secondary"
+            >
               <v-chip
                 v-for="amount in amounts"
                 :key="amount"
@@ -94,7 +99,7 @@
               type="submit"
               color="secondary"
               text="Charge your Balance"
-              :disabled="!amount || !selection"
+              :disabled="amount == null && !selection"
             />
           </div>
         </v-form>
@@ -104,11 +109,14 @@
   </v-row>
 </template>
 <script setup>
-import { ref, inject, computed } from "vue";
+import { ref, watch } from "vue";
 import BaseInput from "./Form/BaseInput.vue";
 import BaseButton from "./Form/BaseButton.vue";
 import userService from "@/services/userService";
 import Toast from "./Toast.vue";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/store/UserStore";
+
 defineProps({
   cards: {
     type: Boolean,
@@ -119,11 +127,12 @@ const verify = ref(false);
 const loading = ref(false);
 const verifyVoucher = ref(false);
 const toast = ref(null);
-const user = inject("user");
-const balance = computed(() => user.value.balance);
-const paymentId = computed(() => user.value.stripe_default_payment_id);
+const store = useUserStore();
+const { user } = storeToRefs(store);
+const balance = ref(user.value.balance);
+const defaultCard = ref(user.value.stripe_default_payment_id);
 const voucher = ref();
-const amount = ref(0);
+const amount = ref(null);
 const amounts = ref(["50", "100"]);
 
 function required(v) {
@@ -146,19 +155,33 @@ function activateVoucher() {
       voucher.value = "";
     });
 }
-function chargeBalance() {
-  console.log(selection.value);
+async function chargeBalance() {
   userService
     .chargeBalance(
-      amount.value ? amount.value : selection.value,
-      paymentId.value
+      amount.value ? +amount.value : +selection.value,
+      defaultCard.value
     )
     .then((response) => {
-      console.log(response);
+      toast.value.toast(response.data.msg, "#4caf50");
     })
     .catch((response) => {
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
+    })
+    .finally(async () => {
+      amount.value = null;
+      selection.value = null;
+      await store.getUserInfo();
     });
 }
+
+watch(
+  user,
+  (newVal) => {
+    if (newVal) {
+      balance.value = newVal.balance;
+    }
+  },
+  { immediate: true }
+);
 </script>

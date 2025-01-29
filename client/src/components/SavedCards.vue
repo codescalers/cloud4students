@@ -82,10 +82,12 @@
   <Toast ref="toast" />
 </template>
 <script setup>
-import { ref, inject, watch } from "vue";
+import { ref, watch } from "vue";
 import BaseButton from "./Form/BaseButton.vue";
 import userService from "@/services/userService";
 import Toast from "./Toast.vue";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/store/UserStore";
 
 const props = defineProps({
   cards: {
@@ -97,7 +99,7 @@ const emit = defineEmits("updateData");
 
 const toast = ref();
 const dialog = ref(false);
-const user = inject("user");
+const { user } = storeToRefs(useUserStore());
 const itemToDelete = ref();
 
 function setDefaultCard(id) {
