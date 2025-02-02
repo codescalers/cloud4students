@@ -69,7 +69,11 @@ func WrapFunc(a Handler) http.HandlerFunc {
 			status = result.Status()
 		}
 
-		if err := json.NewEncoder(w).Encode(object); err != nil {
+		if bytes, ok := object.([]byte); ok {
+			if _, err := w.Write(bytes); err != nil {
+				log.Error().Err(err).Msg("failed to write return object")
+			}
+		} else if err := json.NewEncoder(w).Encode(object); err != nil {
 			log.Error().Err(err).Msg("failed to encode return object")
 		}
 		middlewares.Requests.WithLabelValues(r.Method, r.RequestURI, fmt.Sprint(status)).Inc()
@@ -137,7 +141,7 @@ func BadRequest(err error) Response {
 
 // InternalServerError result
 func InternalServerError(err error) Response {
-	return Error(err, 0)
+	return Error(err)
 }
 
 // NotFound response

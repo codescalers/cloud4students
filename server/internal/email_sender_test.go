@@ -11,20 +11,22 @@ import (
 )
 
 func TestSendMail(t *testing.T) {
+	m := NewMailer("1234")
+
 	t.Run("send valid mail", func(t *testing.T) {
-		err := SendMail("sender@gmail.com", "1234", "receiver@gmail.com", "subject", "body")
+		err := m.SendMail("sender@gmail.com", "receiver@gmail.com", "subject", "body")
 		assert.NoError(t, err)
 	})
 
 	t.Run("send invalid mail", func(t *testing.T) {
-		err := SendMail("sender@gmail.com", "1234", "receiver", "subject", "body")
+		err := m.SendMail("sender@gmail.com", "receiver", "subject", "body")
 		assert.Error(t, err)
 	})
 }
 
 func TestSignUpMailContent(t *testing.T) {
 	subject, body := SignUpMailContent(1234, 60, "user", "")
-	assert.Equal(t, subject, "Welcome to Cloud4Students 🎉")
+	assert.Equal(t, subject, "Welcome to Cloud4All 🎉")
 
 	want := string(signUpMail)
 	want = strings.ReplaceAll(want, "-code-", fmt.Sprint(1234))
@@ -98,7 +100,7 @@ func TestAdminAnnouncementMailContent(t *testing.T) {
 	assert.Equal(t, subject, "New Announcement! 📢 subject!")
 	want := string(adminAnnouncement)
 	want = strings.ReplaceAll(want, "-subject-", "subject!")
-	want = strings.ReplaceAll(want, "-announcement-", "announcement!")
+	want = strings.ReplaceAll(want, "-body-", "announcement!")
 	want = strings.ReplaceAll(want, "-host-", "")
 	want = strings.ReplaceAll(want, "-name-", "")
 	assert.Equal(t, body, want)
