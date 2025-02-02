@@ -302,6 +302,38 @@ definitions:
     - voucherAndCard
     - balanceAndCard
     - voucherAndBalanceAndCard
+  models.AuditEvent:
+    properties:
+      action:
+        type: string
+      id:
+        type: integer
+      metadata:
+        type: string
+      role:
+        type: string
+      timestamp:
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.AuditLog:
+    properties:
+      id:
+        type: integer
+      method:
+        type: string
+      status_code:
+        type: integer
+      success:
+        type: boolean
+      timestamp:
+        type: string
+      url:
+        type: string
+      user_id:
+        type: string
+    type: object
   models.Card:
     properties:
       brand:
@@ -1874,6 +1906,37 @@ paths:
       summary: Charge user balance
       tags:
       - User
+  /user/event:
+    get:
+      consumes:
+      - application/json
+      description: List user's events
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.AuditEvent'
+            type: array
+        "400":
+          description: Bad Request
+          schema: {}
+        "401":
+          description: Unauthorized
+          schema: {}
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - BearerAuth: []
+      summary: List user's events
+      tags:
+      - Audit
   /user/forget_password/verify_email:
     post:
       consumes:
@@ -1942,6 +2005,37 @@ paths:
       summary: Send code to forget password email for verification
       tags:
       - User
+  /user/log:
+    get:
+      consumes:
+      - application/json
+      description: List user's logs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.AuditLog'
+            type: array
+        "400":
+          description: Bad Request
+          schema: {}
+        "401":
+          description: Unauthorized
+          schema: {}
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - BearerAuth: []
+      summary: List user's logs
+      tags:
+      - Audit
   /user/refresh_token:
     post:
       consumes:

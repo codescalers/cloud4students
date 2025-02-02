@@ -324,6 +324,11 @@ func (a *App) K8sDeleteHandler(req *http.Request) (interface{}, Response) {
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logK8sDelete(userID, userRole, cluster.ID, cluster.CreatedAt); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	// metrics
 	middlewares.Deletions.WithLabelValues(userID, "k8s").Inc()
 
@@ -377,6 +382,11 @@ func (a *App) K8sDeleteAllHandler(req *http.Request) (interface{}, Response) {
 	}
 
 	for _, c := range clusters {
+		if err := a.logK8sDelete(userID, userRole, c.ID, c.CreatedAt); err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
 		middlewares.Deletions.WithLabelValues(c.UserID, "k8s").Inc()
 	}
 

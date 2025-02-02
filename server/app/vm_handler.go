@@ -294,6 +294,11 @@ func (a *App) DeleteVMHandler(req *http.Request) (interface{}, Response) {
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logVMDelete(userID, userRole, vm.ID, vm.CreatedAt); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	middlewares.Deletions.WithLabelValues(userID, "vms").Inc()
 	return ResponseMsg{
 		Message: "Virtual machine is deleted successfully",
@@ -345,6 +350,11 @@ func (a *App) DeleteAllVMsHandler(req *http.Request) (interface{}, Response) {
 
 	// metrics
 	for _, vm := range vms {
+		if err := a.logVMDelete(userID, userRole, vm.ID, vm.CreatedAt); err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
 		middlewares.Deletions.WithLabelValues(vm.UserID, "vms").Inc()
 	}
 
