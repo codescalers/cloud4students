@@ -184,23 +184,16 @@ router.beforeEach(async (to, from, next) => {
   const isAuthenticated = localStorage.getItem("token");
   const store = useUserStore();
 
-  if (store.maintenance && to.name == "Maintenance") {
-    next({ name: "Maintenance" });
-    return;
-  }
-
-  // Ensure the store is loaded
-  if (!store.isStoreLoaded) {
-    await store.getUserInfo();
-  }
+  if (!store.isStoreLoaded) await store.getUserInfo();
+  if (store.maintenance) return "/maintenance";
+  if (store.next_launch) return "/nextlaunch";
 
   if (requiresAuth && !isAuthenticated) {
     next("/home");
   } else if (to.path === "/login" && isAuthenticated) {
     next({ name: "Home" });
-  } else {
-    next();
   }
+  next();
 });
 
 export default router;

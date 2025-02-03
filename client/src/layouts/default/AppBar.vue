@@ -33,6 +33,9 @@
           >
             {{ item.title }}
           </v-btn>
+          <v-btn v-if="user.admin" class="text-capitalize" flat to="/admin">
+            Admin
+          </v-btn>
         </v-toolbar-items>
         <v-btn class="text-capitalize" flat>
           Balance: ${{ user.balance }}
@@ -62,22 +65,10 @@
               :key="item.id"
               class="tile text-white"
             >
-              <template v-slot:prepend>
-                <v-icon
-                  :icon="item.type == 'vms' ? 'mdi-cube-outline' : ''"
-                ></v-icon>
-              </template>
-
               <v-list-item-title>
                 <router-link
                   style="padding: 15px"
-                  :to="
-                    item.type == 'vms'
-                      ? '/vm'
-                      : item.type == 'k8s'
-                      ? '/k8s'
-                      : '/'
-                  "
+                  :to="item.type == 'vms' ? '/vm' : '/'"
                   class="d-flex text-white text-decoration-none"
                   @click="
                     seen(item.id);
@@ -184,29 +175,37 @@ const getNotifications = () => {
 };
 
 const seen = (id) => {
-  userService
-    .seenNotification(id)
-    .then(() => {
-      getNotifications();
-    })
-    .catch((response) => {
-      const { err } = response.response.data;
-      toast.value.toast(err, "#FF5252");
-    });
+  userService.seenNotification(id).catch((response) => {
+    const { err } = response.response.data;
+    toast.value.toast(err, "#FF5252");
+  });
 };
 
-// if (localStorage.getItem("token")) {
-//   setInterval(() => {
-//     getNotifications();
-//   }, 30 * 1000);
-// }
-
 onMounted(async () => {
-  if (route.redirectedFrom) checkTitle(route.redirectedFrom.name);
+  await getNotifications();
+  const token = localStorage.getItem("token");
+  const response = await fetch("http://localhost:3000/v1/notification/stream", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-  // if (token.value) {
-  //   getNotifications();
-  // }
+  if (!response.ok) {
+    console.error("Failed to connect to SSE endpoint");
+    return;
+  }
+
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let finished = false;
+
+  while (!finished) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    notifications.value.push(value);
+  }
+
+  if (route.redirectedFrom) checkTitle(route.redirectedFrom.name);
 });
 </script>
 
