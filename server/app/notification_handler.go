@@ -11,6 +11,7 @@ import (
 	"github.com/codescalers/cloud4students/middlewares"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 )
 
 // UpdateNotificationsHandler updates notifications for a user
@@ -74,6 +75,41 @@ func (a *App) SeenNotificationsHandler(req *http.Request) (interface{}, Response
 	}, Ok()
 }
 
+// ListNotificationsHandler lists notifications for a user
+// Example endpoint: Lists user's notifications
+// @Summary Lists user's notifications
+// @Description Lists user's notifications
+// @Tags Notification
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Success 200 {object} []models.Notification
+// @Failure 401 {object} Response
+// @Failure 404 {object} Response
+// @Failure 500 {object} Response
+// @Router /notification [get]
+func (a *App) ListNotificationsHandler(req *http.Request) (interface{}, Response) {
+	userID := req.Context().Value(middlewares.UserIDKey("UserID")).(string)
+
+	notifications, err := a.db.ListNotifications(userID)
+	if errors.Is(err, gorm.ErrRecordNotFound) || len(notifications) == 0 {
+		return ResponseMsg{
+			Message: "You don't have any notifications yet",
+			Data:    notifications,
+		}, Ok()
+	}
+
+	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	return ResponseMsg{
+		Message: "You have notifications",
+		Data:    notifications,
+	}, Ok()
+}
+
 // sseNotificationsHandler to stream notifications
 // Example endpoint: Stream user's notifications
 // @Summary Stream user's notifications
@@ -85,7 +121,7 @@ func (a *App) SeenNotificationsHandler(req *http.Request) (interface{}, Response
 // @Success 200 {object} []models.Notification
 // @Failure 401 {object} Response
 // @Failure 500 {object} Response
-// @Router /notification [get]
+// @Router /notification/stream [get]
 func (a *App) sseNotificationsHandler(w http.ResponseWriter, req *http.Request) {
 	userID := req.Context().Value(middlewares.UserIDKey("UserID")).(string)
 

@@ -974,7 +974,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Stream user's notifications",
+                "description": "Lists user's notifications",
                 "consumes": [
                     "application/json"
                 ],
@@ -984,7 +984,7 @@ const docTemplate = `{
                 "tags": [
                     "Notification"
                 ],
-                "summary": "Stream user's notifications",
+                "summary": "Lists user's notifications",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -997,6 +997,10 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {}
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {}
                     },
                     "500": {
@@ -1030,6 +1034,45 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {}
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {}
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {}
+                    }
+                }
+            }
+        },
+        "/notification/stream": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Stream user's notifications",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Stream user's notifications",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Notification"
+                            }
+                        }
                     },
                     "401": {
                         "description": "Unauthorized",
@@ -3330,7 +3373,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "type": {
-                    "description": "to allow redirecting from notifications to the right pages",
+                    "description": "to allow redirecting from notifications to the right pages\nfor example if the type is ` + "`" + `vm` + "`" + ` it will be redirected to the vm page",
                     "type": "string"
                 },
                 "user_id": {
