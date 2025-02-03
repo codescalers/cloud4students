@@ -8,7 +8,6 @@ export const useUserStore = defineStore("userStore", {
     maintenance: false,
     next_launch: false,
     next_launch_admin: false,
-
   }),
   actions: {
     async login(email, password) {
@@ -31,6 +30,9 @@ export const useUserStore = defineStore("userStore", {
         this.user = { ...this.user, ...user };
         this.isLoaded = true;
       } catch (error) {
+        if (error.response.status == 401) {
+          localStorage.removeItem("token");
+        }
         return error
       } finally {
         this.isLoaded = false;
