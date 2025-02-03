@@ -255,6 +255,14 @@ export default {
     return await authClient().post("/voucher", { length, vms, public_ips });
   },
 
+  async getAuditEvents() {
+    return await authClient().get("/user/event");
+  },
+
+  async getAuditLogs() {
+    return await authClient().get("/user/log");
+  },
+
   // balance
   async getBalance() {
     return await authClient().get("/balance");

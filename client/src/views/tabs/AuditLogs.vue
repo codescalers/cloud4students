@@ -12,9 +12,16 @@
       </v-col>
     </v-row>
   </v-container>
+  <Toast ref="toast" />
 </template>
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import userService from "@/services/userService";
+import Toast from "@/components/Toast.vue";
+
+const logs = ref([]);
+const events = ref([]);
+const toast = ref(null);
 const headers = ref([
   {
     title: "Event",
@@ -25,7 +32,38 @@ const headers = ref([
     key: "date",
   },
 ]);
-const logs = ref([]);
+
+async function getAuditEvents() {
+  await userService
+    .getAuditEvents()
+    .then((response) => {
+      const { data } = response.data;
+      events.value = data;
+    })
+    .catch((response) => {
+      const { err } = response.response.data;
+      toast.value.toast(err, "#FF5252");
+    });
+}
+
+async function getAuditLogs() {
+  await userService
+    .getAuditEvents()
+    .then((response) => {
+      const { data } = response.data;
+      logs.value = data;
+      console.log(logs.value)
+    })
+    .catch((response) => {
+      const { err } = response.response.data;
+      toast.value.toast(err, "#FF5252");
+    });
+}
+
+onMounted(async () => {
+  await getAuditEvents();
+  await getAuditLogs();
+});
 </script>
 <style>
 thead th {
