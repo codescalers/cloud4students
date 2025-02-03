@@ -506,7 +506,9 @@ definitions:
       seen:
         type: boolean
       type:
-        description: to allow redirecting from notifications to the right pages
+        description: |-
+          to allow redirecting from notifications to the right pages
+          for example if the type is `vm` it will be redirected to the vm page
         type: string
       user_id:
         type: string
@@ -1349,7 +1351,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Stream user's notifications
+      description: Lists user's notifications
       produces:
       - application/json
       responses:
@@ -1362,12 +1364,15 @@ paths:
         "401":
           description: Unauthorized
           schema: {}
+        "404":
+          description: Not Found
+          schema: {}
         "500":
           description: Internal Server Error
           schema: {}
       security:
       - BearerAuth: []
-      summary: Stream user's notifications
+      summary: Lists user's notifications
       tags:
       - Notification
     put:
@@ -1423,6 +1428,31 @@ paths:
       security:
       - BearerAuth: []
       summary: Set user's notifications as seen
+      tags:
+      - Notification
+  /notification/stream:
+    get:
+      consumes:
+      - application/json
+      description: Stream user's notifications
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Notification'
+            type: array
+        "401":
+          description: Unauthorized
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - BearerAuth: []
+      summary: Stream user's notifications
       tags:
       - Notification
   /region:
