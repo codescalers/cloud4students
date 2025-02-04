@@ -4,10 +4,17 @@
       <v-col cols="12">
         <v-data-table
           :headers="headers"
-          :items="logs"
+          :items="events"
           class="d-flex justify-center elevation-1"
-          :hide-default-footer="logs == 0"
+          :hide-default-footer="events == 0"
         >
+        <template #[`item.action`]="{ item }">
+            {{ item.action.replace('_', '.') }}
+          </template>
+
+          <template #[`item.timestamp`]="{ item }">
+            {{ formatDate(item.timestamp) }}
+          </template>
         </v-data-table>
       </v-col>
     </v-row>
@@ -19,17 +26,16 @@ import { ref, onMounted } from "vue";
 import userService from "@/services/userService";
 import Toast from "@/components/Toast.vue";
 
-const logs = ref([]);
 const events = ref([]);
 const toast = ref(null);
 const headers = ref([
   {
-    title: "Event",
-    key: "event",
+    title: "Action",
+    key: "action",
   },
   {
-    title: "Date",
-    key: "date",
+    title: "Timestamp",
+    key: "timestamp",
   },
 ]);
 
@@ -46,23 +52,20 @@ async function getAuditEvents() {
     });
 }
 
-async function getAuditLogs() {
-  await userService
-    .getAuditEvents()
-    .then((response) => {
-      const { data } = response.data;
-      logs.value = data;
-      console.log(logs.value)
-    })
-    .catch((response) => {
-      const { err } = response.response.data;
-      toast.value.toast(err, "#FF5252");
-    });
+function formatDate(date) {
+  var d = new Date(date),
+    month = "" + (d.getMonth() + 1),
+    day = "" + d.getDate(),
+    year = d.getFullYear();
+
+  if (month.length < 2) month = "0" + month;
+  if (day.length < 2) day = "0" + day;
+
+  return [day, month, year].join("-");
 }
 
 onMounted(async () => {
   await getAuditEvents();
-  await getAuditLogs();
 });
 </script>
 <style>
