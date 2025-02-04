@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import userService from "@/services/userService";
-import router from "@/router";
+// import router from "@/router";
 export const useUserStore = defineStore("userStore", {
   state: () => ({
     user: null,
@@ -24,12 +24,11 @@ export const useUserStore = defineStore("userStore", {
       try {
         const response = await userService.getUser();
         const { user } = response.data.data;
-        this.user = { ...this.user, ...user };
+        this.user = user
         this.isLoaded = true;
       } catch (error) {
         if (error.response.status === 401) {
           localStorage.removeItem("token");
-          router.push("/");
         }
         return error;
       } finally {

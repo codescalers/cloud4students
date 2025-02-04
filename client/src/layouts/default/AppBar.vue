@@ -130,7 +130,8 @@ const drawer = ref(false);
 const isActive = ref(0);
 const notifications = ref([]);
 const toast = ref(null);
-const { user } = storeToRefs(useUserStore());
+const store =useUserStore()
+const { user } = storeToRefs(store);
 const navItems = ref([
   { title: "Home", path: "/" },
   { title: "Virtual Machines", path: "/vm" },
@@ -183,28 +184,6 @@ const seen = (id) => {
 
 onMounted(async () => {
   await getNotifications();
-  const token = localStorage.getItem("token");
-  const response = await fetch("http://localhost:3000/v1/notification/stream", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    console.error("Failed to connect to SSE endpoint");
-    return;
-  }
-
-  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-  let finished = false;
-
-  while (!finished) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    notifications.value.push(value);
-  }
-
   if (route.redirectedFrom) checkTitle(route.redirectedFrom.name);
 });
 </script>

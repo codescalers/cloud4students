@@ -192,8 +192,8 @@ router.beforeEach(async (to, from, next) => {
     next("/home");
   } else if (to.path === "/login" && isAuthenticated) {
     next({ name: "Home" });
-  }
-  next();
+  }     next();
+
 });
 
 export default router;

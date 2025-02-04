@@ -13,6 +13,31 @@ const authClient = () =>
     },
   });
 
+async function runSSE() {
+  const token = localStorage.getItem("token");
+  const response = await fetch("http://localhost:3000/v1/notification/stream", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    console.error("Failed to connect to SSE endpoint");
+    return;
+  }
+
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let finished = false;
+
+  while (!finished) {
+    const { done } = await reader.read();
+    if (done) break;
+  }
+}
+
+runSSE();
+
 let refreshInterval;
 
 const startTokenRefreshInterval = function (timeout) {

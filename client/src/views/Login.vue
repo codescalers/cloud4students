@@ -123,12 +123,12 @@ const onSubmit = async () => {
     .then(async (response) => {
       await store.getUserInfo();
       toast.value.toast(response.data.msg, "#4caf50");
-      router.push({
-        path: "/",
-      });
+      await router.push('/')
     })
     .catch((error) => {
-      toast.value.toast(error.response.data.err, "#FF5252");
+      toast.value.toast(error, "#FF5252");
     });
 };
+
+
 </script>
