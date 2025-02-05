@@ -100,7 +100,7 @@
     <Toast ref="toast" />
   </v-container>
 </template>
-<script>
+<script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import BaseInput from "@/components/Form/BaseInput.vue";
@@ -110,127 +110,97 @@ import logo from "@/assets/logo_c4all.png";
 import signUpLogo from "@/assets/sign-up.png";
 import userService from "@/services/userService";
 import Toast from "@/components/Toast.vue";
+import { useUserStore } from "@/store/UserStore";
 
-export default {
-  components: {
-    BaseInput,
-    BaseButton,
-    TermsAndConditions,
-    Toast,
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const router = useRouter();
+const verify = ref(false);
+const firstName = ref();
+const lastName = ref();
+const email = ref();
+const password = ref(null);
+const cPassword = ref(null);
+const visible = ref(false);
+const cShowPassword = ref(false);
+const isSignup = ref(true);
+const loading = ref(false);
+const toast = ref(null);
+const checked = ref(false);
+const nameRegex = /^(\w+\s){0,3}\w*$/;
+const form = ref(null);
+const store = useUserStore();
+const nameValidation = ref([
+  (value) => {
+    if (!value) return "Name is required";
+    if (!value.match(nameRegex)) return "Must be at most four names";
+    if (value.length < 3) return "Name should be at least 3 characters";
+    if (value.length > 20) return "Name should be at most 20 characters";
+    return true;
   },
+]);
 
-  setup() {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const router = useRouter();
-    const verify = ref(false);
-    const firstName = ref();
-    const lastName = ref();
-    const email = ref();
-    const password = ref(null);
-    const cPassword = ref(null);
-    const visible = ref(false);
-    const cShowPassword = ref(false);
-    const isSignup = ref(true);
-    const loading = ref(false);
-    const toast = ref(null);
-    const checked = ref(false);
-    const nameRegex = /^(\w+\s){0,3}\w*$/;
-    const form = ref(null);
-
-    const nameValidation = ref([
-      (value) => {
-        if (!value) return "Name is required";
-        if (!value.match(nameRegex)) return "Must be at most four names";
-        if (value.length < 3) return "Name should be at least 3 characters";
-        if (value.length > 20) return "Name should be at most 20 characters";
-        return true;
-      },
-    ]);
-
-    const emailRules = ref([
-      (value) => {
-        if (!value) return "Email is required";
-        if (!value.match(emailRegex)) return "Invalid email address";
-        return true;
-      },
-    ]);
-
-    const passwordRules = ref([
-      (value) => {
-        if (!value) return "Password is required";
-        if (value.length < 7) return "Password must be at least 7 characters";
-        if (value.length > 12) return "Password must be at most 12 characters";
-        return true;
-      },
-    ]);
-
-    const cPasswordRules = ref([
-      (value) => {
-        if (!value) return "Confirm password is required";
-        if (value !== password.value) return "Passwords don't match";
-        return true;
-      },
-    ]);
-
-    const signUp = () => {
-      if (!checked.value) return;
-      loading.value = true;
-      userService
-        .signUp(
-          firstName.value,
-          lastName.value,
-          email.value,
-          password.value,
-          cPassword.value
-        )
-        .then((response) => {
-          const { msg } = response.data;
-          localStorage.setItem("firstName", firstName.value);
-          localStorage.setItem("lastName", lastName.value);
-          localStorage.setItem("password", password.value);
-          localStorage.setItem("confirm_password", cPassword.value);
-          toast.value.toast(msg, "#4caf50");
-          router.push({
-            name: "OTP",
-            query: {
-              email: email.value,
-              isSignup: isSignup.value,
-              timeout: response.data.data.timeout,
-            },
-          });
-        })
-        .catch((response) => {
-          const { err } = response.response.data;
-          toast.value.toast(err, "#FF5252");
-        })
-        .finally(() => {
-          form.value.reset();
-          loading.value = false;
-        });
-    };
-    return {
-      signUp,
-      loading,
-      verify,
-      cPassword,
-      password,
-      visible,
-      email,
-      toast,
-      firstName,
-      lastName,
-      emailRules,
-      nameValidation,
-      passwordRules,
-      cPasswordRules,
-      isSignup,
-      checked,
-      logo,
-      signUpLogo,
-      cShowPassword,
-      form,
-    };
+const emailRules = ref([
+  (value) => {
+    if (!value) return "Email is required";
+    if (!value.match(emailRegex)) return "Invalid email address";
+    return true;
   },
+]);
+
+const passwordRules = ref([
+  (value) => {
+    if (!value) return "Password is required";
+    if (value.length < 7) return "Password must be at least 7 characters";
+    if (value.length > 12) return "Password must be at most 12 characters";
+    return true;
+  },
+]);
+
+const cPasswordRules = ref([
+  (value) => {
+    if (!value) return "Confirm password is required";
+    if (value !== password.value) return "Passwords don't match";
+    return true;
+  },
+]);
+
+const signUp = () => {
+  if (!checked.value) return;
+  loading.value = true;
+  userService
+    .signUp(
+      firstName.value,
+      lastName.value,
+      email.value,
+      password.value,
+      cPassword.value
+    )
+    .then((response) => {
+      store.newUser = {
+        firstName: firstName.value,
+        lastName: lastName.value,
+        password: password.value,
+        confirmPassword: cPassword.value,
+      };
+      const { msg } = response.data;
+      toast.value.toast(msg, "#4caf50");
+      router.push({
+        name: "OTP",
+        query: {
+          email: email.value,
+          isSignup: isSignup.value,
+          timeout: response.data.data.timeout,
+        },
+      });
+    })
+    .catch((response) => {
+      const { err } = response.response.data;
+      toast.value.toast(err, "#FF5252");
+    })
+    .finally(() => {
+      form.value.reset();
+      loading.value = false;
+    });
 };
 </script>
 

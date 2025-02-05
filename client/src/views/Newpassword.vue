@@ -89,7 +89,6 @@ const onSubmit = () => {
       .changePassword(route.query.email, newPassword.value, cnewpassword.value)
       .then((response) => {
         toast.value.toast(response.data.msg, "#4caf50");
-        localStorage.removeItem("password_token");
         router.push({
           name: "Login",
         });
@@ -103,7 +102,6 @@ const onSubmit = () => {
       .changePassword(route.query.email, newPassword.value, cnewpassword.value)
       .then((response) => {
         toast.value.toast(response.data.msg, "#4caf50");
-        localStorage.removeItem("password_token");
         router.push({
           name: "Login",
         });

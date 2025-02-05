@@ -39,6 +39,8 @@ import Toast from "@/components/Toast.vue";
 import OTPImg from "@/assets/otp.png";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import userService from "@/services/userService";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/store/UserStore";
 
 const route = useRoute();
 const router = useRouter();
@@ -46,6 +48,9 @@ const countDown = ref(route.query.timeout);
 const loading = ref(false);
 const otp = ref("");
 const toast = ref(null);
+const store = useUserStore();
+const { newUser } = storeToRefs(store);
+
 const formattedCountDown = computed(() =>
   countDown.value < 10 ? `0${countDown.value}` : countDown.value
 );
@@ -76,11 +81,11 @@ const resetHandler = () => {
   } else {
     userService
       .signUp(
-        localStorage.getItem("firstName"),
-        localStorage.getItem("lastName"),
+        newUser.firstName,
+        newUser.lastName,
         route.query.email,
-        localStorage.getItem("password"),
-        localStorage.getItem("confirm_password")
+        newUser.password,
+        newUser.confirmPassword
       )
       .then((response) => {
         toast.value.toast(response.data.msg, "#4caf50");
@@ -92,10 +97,7 @@ const resetHandler = () => {
       })
       .finally(() => {
         otp.value = "";
-        localStorage.removeItem("firstName");
-        localStorage.removeItem("lastName");
-        localStorage.removeItem("password");
-        localStorage.removeItem("confirm_password");
+        store.newUser = null;
       });
   }
 };

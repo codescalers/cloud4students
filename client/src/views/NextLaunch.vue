@@ -12,12 +12,5 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
 import nextLaunchImg from "@/assets/next_launch.png";
-const router = useRouter();
-const nextLaunch = ref(localStorage.getItem("nextlaunch") == "true");
-if (!nextLaunch.value) {
-  router.push({ name: "Home" });
-}
 </script>

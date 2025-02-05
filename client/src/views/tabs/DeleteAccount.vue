@@ -57,9 +57,7 @@ function deleteAccount() {
     .deleteAccount()
     .then((response) => {
       toast.value.toast(response.data.msg, "#4caf50");
-      router.push({
-        name: "Landing",
-      });
+      router.push("/");
     })
     .catch((error) => {
       toast.value.toast(error.response.data.err, "#FF5252");

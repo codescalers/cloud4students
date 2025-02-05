@@ -8,12 +8,5 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
 import maintenanceImg from "@/assets/maintainence.png";
-const router = useRouter();
-const maintenance = ref(localStorage.getItem("maintenance") == "true");
-if (!maintenance.value) {
-  router.push({ name: "Home" });
-}
 </script>

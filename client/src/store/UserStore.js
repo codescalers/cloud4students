@@ -4,6 +4,7 @@ import userService from "@/services/userService";
 export const useUserStore = defineStore("userStore", {
   state: () => ({
     user: null,
+    newUser: null,
     isLoaded: false,
     maintenance: false,
     next_launch: false,
