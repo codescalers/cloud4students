@@ -3,13 +3,14 @@
     <v-row>
       <v-col cols="12">
         <v-data-table
+          :loading="loading"
           :headers="headers"
           :items="events"
           class="d-flex justify-center elevation-1"
           :hide-default-footer="events == 0"
         >
-        <template #[`item.action`]="{ item }">
-            {{ item.action.replace('_', '.') }}
+          <template #[`item.action`]="{ item }">
+            {{ item.action.replace("_", ".") }}
           </template>
 
           <template #[`item.timestamp`]="{ item }">
@@ -28,6 +29,7 @@ import Toast from "@/components/Toast.vue";
 
 const events = ref([]);
 const toast = ref(null);
+const loading = ref(false);
 const headers = ref([
   {
     title: "Action",
@@ -40,6 +42,7 @@ const headers = ref([
 ]);
 
 async function getAuditEvents() {
+  loading.value = true;
   await userService
     .getAuditEvents()
     .then((response) => {
@@ -49,6 +52,9 @@ async function getAuditEvents() {
     .catch((response) => {
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
+    })
+    .finally(() => {
+      loading.value = false;
     });
 }
 

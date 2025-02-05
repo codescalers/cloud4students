@@ -26,7 +26,7 @@ export const useUserStore = defineStore("userStore", {
         const { user } = response.data.data;
         this.user = user;
       } catch (error) {
-        return error;
+        console.error("Failed to fetch user info:", error);
       } finally {
         this.isLoaded = true;
       }
@@ -54,6 +54,6 @@ export const useUserStore = defineStore("userStore", {
     },
   },
   getters: {
-    isStoreLoaded: (state) => state.isLoaded,
+    isUserLoaded: (state) => state.isLoaded,
   },
 });

@@ -1,7 +1,7 @@
 <template>
   <v-app class="overflow-hidden">
     <DefaultBar />
-    <default-view />
+    <DefaultView />
     <FooterComponent />
   </v-app>
 </template>
@@ -10,4 +10,5 @@
 import DefaultBar from "./AppBar.vue";
 import DefaultView from "./View.vue";
 import FooterComponent from "@/components/Footer.vue";
+
 </script>

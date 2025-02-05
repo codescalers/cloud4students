@@ -33,12 +33,17 @@
           >
             {{ item.title }}
           </v-btn>
-          <v-btn v-if="user.admin" class="text-capitalize" flat to="/admin">
+          <v-btn
+            v-if="!isLoading && user?.admin"
+            class="text-capitalize"
+            flat
+            to="/admin"
+          >
             Admin
           </v-btn>
         </v-toolbar-items>
         <v-btn class="text-capitalize" flat>
-          Balance: ${{ user.balance }}
+          Balance: ${{ user?.balance }}
         </v-btn>
         <v-menu id="notifications" location="bottom">
           <template v-slot:activator="{ props }">
@@ -93,7 +98,7 @@
           <template v-slot:activator="{ props }">
             <v-btn class="text-capitalize" v-bind="props">
               <v-icon size="25" class="mr-2">mdi-account-circle-outline</v-icon>
-              {{ user.first_name }}
+              {{ user?.first_name }}
             </v-btn>
           </template>
           <v-list>
@@ -119,19 +124,15 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import userService from "@/services/userService";
-import { useRoute } from "vue-router";
 import Toast from "@/components/Toast.vue";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "@/store/UserStore";
-
-const route = useRoute();
+import userService from "@/services/userService";
 const drawer = ref(false);
-const isActive = ref(0);
 const notifications = ref([]);
 const toast = ref(null);
 const store = useUserStore();
-const { user } = storeToRefs(store);
+const { user, isLoading, getUserInfo } = storeToRefs(store);
 const navItems = ref([
   { title: "Home", path: "/" },
   { title: "Virtual Machines", path: "/vm" },
@@ -147,14 +148,13 @@ const menuItems = ref([
     path: "/logout",
   },
 ]);
-
-const setActive = (index, item) => {
-  if (item == null) {
-    isActive.value = null;
-  } else {
-    isActive.value = index;
-  }
-};
+// const setActive = (index, item) => {
+//   if (item == null) {
+//     isActive.value = null;
+//   } else {
+//     isActive.value = index;
+//   }
+// };
 
 const checkTitle = (title) => {
   if (title == "Sign Out") {
@@ -187,30 +187,23 @@ async function runSSE() {
   if (!token) return;
   const response = await fetch("http://localhost:3000/v1/notification/stream", {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
-
   if (!response.ok) {
     console.error("Failed to connect to SSE endpoint");
     return;
   }
-
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let finished = false;
-
   while (!finished) {
     const { done } = await reader.read();
     if (done) break;
   }
 }
-onMounted(() => {
-  if(!user) return
+onMounted(async () => {
+  if (!user.value) await getUserInfo;
   getNotifications();
   runSSE();
-
-  if (route.redirectedFrom) checkTitle(route.redirectedFrom.name);
 });
 </script>
 

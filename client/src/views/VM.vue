@@ -196,6 +196,7 @@ const headers = ref([
 ]);
 
 const getVMS = () => {
+  loading.value = true;
   userService
     .getVms()
     .then((response) => {
@@ -214,7 +215,8 @@ const getVMS = () => {
     .catch((response) => {
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
-    });
+    })
+    .finally(() => (loading.value = false));
 };
 
 const deleteVms = () => {

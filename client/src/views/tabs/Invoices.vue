@@ -12,6 +12,7 @@
     <v-row>
       <v-col cols="12">
         <v-data-table
+          :loading="loading"
           :headers="headers"
           :items="invoices"
           class="d-flex justify-center elevation-1"
@@ -58,7 +59,7 @@ const message = ref();
 const store = useUserStore();
 const { user } = storeToRefs(store);
 const userID = ref(user.value.id);
-
+const loading = ref(false);
 const headers = ref([
   {
     title: "Date",
@@ -88,6 +89,7 @@ function formatDate(date) {
 
 // TODO handle invoices InvoiceID
 function getInvoices() {
+  loading.value = true;
   userService
     .getInvoice(userID.value)
     .then((response) => {
@@ -98,7 +100,8 @@ function getInvoices() {
     .catch((response) => {
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
-    });
+    })
+    .finally(() => (loading.value = false));
 }
 
 function downloadInvoice(id) {

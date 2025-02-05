@@ -174,8 +174,9 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const isAuthenticated = localStorage.getItem("token") !== null;
   const store = useUserStore();
-  if (store.isStoreLoaded) await store.getUserInfo();
+  
   if (to.meta.requiresAuth && !isAuthenticated) {
+    console.log('!isAuthenticated')
     next("/");
   } else {
     if (!store.user) await store.getUserInfo();
