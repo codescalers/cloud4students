@@ -100,29 +100,22 @@
     </v-container>
   </v-container>
 </template>
-<script>
+<script setup>
 import { useRouter } from "vue-router";
 import BaseButton from "@/components/Form/BaseButton.vue";
-export default {
-  components: {
-    BaseButton,
-  },
-  setup() {
-    const router = useRouter();
 
-    const register = () => {
-      router.push({
-        name: "Signup",
-      });
-    };
+const router = useRouter();
 
-    const login = () => {
-      router.push({
-        name: "Login",
-      });
-    };
-    return { register, login };
-  },
+const register = () => {
+  router.push({
+    name: "Signup",
+  });
+};
+
+const login = () => {
+  router.push({
+    name: "Login",
+  });
 };
 </script>
 

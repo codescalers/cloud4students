@@ -12,15 +12,16 @@ import ChangePassword from "@/views/tabs/ChangePassword.vue";
 import AuditLogs from "@/views/tabs/AuditLogs.vue";
 import DeleteAccount from "@/views/tabs/DeleteAccount.vue";
 import Deploy from "@/views/Deploy.vue";
-import Home from "@/views/Home.vue";
+import Home from "@/views/HomeWrapper.vue";
 
 const routes = [
   {
-    path: "/home",
-    name: "Landing",
-    component: () => import("@/views/LandingPage.vue"),
+    path: "/",
+    name: "Home",
+    component: Home,
     meta: {
-      layout: "NoNavbar",
+      layout: "Default",
+      requiresAuth: false,
     },
   },
   {
@@ -78,15 +79,6 @@ const routes = [
     meta: {
       requiresAuth: true,
       layout: "NoNavbar",
-    },
-  },
-  {
-    path: "/",
-    name: "Home",
-    component: Home,
-    meta: {
-      layout: "Default",
-      requiresAuth: true,
     },
   },
   {
@@ -180,20 +172,14 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
-  const isAuthenticated = localStorage.getItem("token");
+  const isAuthenticated = localStorage.getItem("token") !== null;
   const store = useUserStore();
-
-  if (!store.isStoreLoaded) await store.getUserInfo();
-  if (store.maintenance) return "/maintenance";
-  if (store.next_launch) return "/nextlaunch";
-
-  if (requiresAuth && !isAuthenticated) {
-    next("/home");
-  } else if (to.path === "/login" && isAuthenticated) {
-    next({ name: "Home" });
-  }     next();
-
+  if (store.isStoreLoaded) await store.getUserInfo();
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next("/");
+  } else {
+    if (!store.user) await store.getUserInfo();
+    next();
+  }
 });
-
 export default router;

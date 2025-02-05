@@ -1,4 +1,5 @@
 import axios from "axios";
+import router from "@/router";
 
 const baseClient = () =>
   axios.create({
@@ -13,30 +14,17 @@ const authClient = () =>
     },
   });
 
-async function runSSE() {
-  const token = localStorage.getItem("token");
-  const response = await fetch("http://localhost:3000/v1/notification/stream", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    console.error("Failed to connect to SSE endpoint");
-    return;
+authClient().interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.error("Unauthorized access - redirecting to home");
+      localStorage.removeItem("token");
+      router.push({ name: "Home" });
+    }
+    return Promise.reject(error);
   }
-
-  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-  let finished = false;
-
-  while (!finished) {
-    const { done } = await reader.read();
-    if (done) break;
-  }
-}
-
-runSSE();
+);
 
 let refreshInterval;
 

@@ -1,88 +1,13 @@
 <template>
   <v-app class="overflow-hidden">
-    <default-bar :key="$route.fullPath" v-if="!maintenance && nextlaunch" />
-    <!-- <Quota class="quota" v-if="!isAdmin && !maintenance && !noQuota && nextlaunch" /> -->
+    <DefaultBar />
     <default-view />
     <FooterComponent />
   </v-app>
 </template>
 
-<script>
+<script setup>
 import DefaultBar from "./AppBar.vue";
 import DefaultView from "./View.vue";
-// import Quota from "@/components/Quota.vue";
-import { useRoute, useRouter } from "vue-router";
-import { computed, ref } from "vue";
-import userService from "@/services/userService.js";
 import FooterComponent from "@/components/Footer.vue";
-
-export default {
-  components: {
-    DefaultBar,
-    DefaultView,
-    // Quota,
-    FooterComponent,
-  },
-
-  setup() {
-    const route = useRoute();
-    const router = useRouter();
-    const maintenance = ref(false);
-    const nextlaunch = ref(true);
-    const noQuota = ref(false);
-    const excludedRoutes = ref([
-      "/",
-      "/login",
-      "/signup",
-      "/forgetPassword",
-      "/otp",
-      "/newPassword",
-      "/about",
-    ]);
-
-    userService.maintenance();
-    maintenance.value = localStorage.getItem("maintenance") == "true";
-
-    nextlaunch.value = localStorage.getItem("nextlaunch") == "true";
-
-    const isAdmin = computed(() => {
-      if (route.path !== "/admin") {
-        return false;
-      }
-      return true;
-    });
-
-    if (excludedRoutes.value.includes(route.path)) {
-      noQuota.value = true;
-      nextlaunch.value = true;
-    }
-
-    if (maintenance.value) {
-      router.push({ name: "Maintenance" });
-    }
-
-    if (!nextlaunch.value) {
-      router.push({ name: "NextLaunch" });
-    }
-    return { isAdmin, maintenance, noQuota, nextlaunch };
-  },
-};
 </script>
-
-<style>
-.quota {
-  position: fixed;
-  top: 15%;
-  right: 0;
-  z-index: 999;
-}
-
-@media only screen and (max-width: 960px) {
-  .quota {
-    position: relative;
-    width: 100%;
-    top: 65px;
-    z-index: -999;
-  }
-}
-</style>

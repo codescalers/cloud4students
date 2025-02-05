@@ -4,10 +4,6 @@
   </v-main>
 </template>
 
-<script setup>
-//
-</script>
-
 <style>
 .primary {
   color: #217dbb;
