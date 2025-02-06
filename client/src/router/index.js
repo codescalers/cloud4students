@@ -21,7 +21,6 @@ const routes = [
     component: Home,
     meta: {
       layout: "Default",
-      requiresAuth: false,
     },
   },
   {

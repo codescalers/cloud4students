@@ -1,11 +1,8 @@
 <template>
-  <v-app class="overflow-hidden">
-    <div v-if="user">
-      <DefaultBar />
-      <DefaultView />
-      <FooterComponent />
-    </div>
-    <v-progress-circular indeterminate v-else></v-progress-circular>
+  <v-app v-if="isUserLoaded" class="overflow-hidden">
+    <DefaultBar />
+    <DefaultView />
+    <FooterComponent />
   </v-app>
 </template>
 
@@ -17,5 +14,5 @@ import { storeToRefs } from "pinia";
 import { useUserStore } from "@/store/UserStore";
 
 const store = useUserStore();
-const { user } = storeToRefs(store);
+const { isUserLoaded } = storeToRefs(store);
 </script>
