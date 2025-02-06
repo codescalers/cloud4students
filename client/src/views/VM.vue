@@ -36,6 +36,7 @@
 
       <BaseButton
         color="secondary"
+        :disabled="!sshKey"
         @click="createVM"
         text="+ Create a new VM"
       />
@@ -196,7 +197,6 @@ const headers = ref([
 ]);
 
 const getVMS = () => {
-  loading.value = true;
   userService
     .getVms()
     .then((response) => {

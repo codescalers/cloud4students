@@ -87,6 +87,7 @@ function getVoucher() {
     })
     .finally(() => {
       reason.value = "";
+      dialog.value = false
     });
 }
 </script>

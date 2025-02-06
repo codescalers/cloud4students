@@ -144,7 +144,7 @@ function activateVoucher() {
   userService
     .activateVoucher(voucher.value)
     .then((response) => {
-      console.log(response); // after voucher is activated
+      toast.value.toast(response.data.msg, "#4caf50");
     })
     .catch((response) => {
       const { err } = response.response.data;
@@ -153,6 +153,7 @@ function activateVoucher() {
     .finally(() => {
       loading.value = false;
       voucher.value = "";
+      verifyVoucher.value = false;
     });
 }
 async function chargeBalance() {

@@ -57,6 +57,7 @@ function deleteAccount() {
     .deleteAccount()
     .then((response) => {
       toast.value.toast(response.data.msg, "#4caf50");
+      localStorage.removeItem("token");
       router.push("/");
     })
     .catch((error) => {

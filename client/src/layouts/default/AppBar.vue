@@ -128,8 +128,10 @@ import Toast from "@/components/Toast.vue";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "@/store/UserStore";
 import userService from "@/services/userService";
+
 const drawer = ref(false);
 const notifications = ref([]);
+const isActive = ref(0);
 const toast = ref(null);
 const store = useUserStore();
 const { user, isLoading, getUserInfo } = storeToRefs(store);
@@ -148,13 +150,13 @@ const menuItems = ref([
     path: "/logout",
   },
 ]);
-// const setActive = (index, item) => {
-//   if (item == null) {
-//     isActive.value = null;
-//   } else {
-//     isActive.value = index;
-//   }
-// };
+const setActive = (index, item) => {
+  if (item == null) {
+    isActive.value = null;
+  } else {
+    isActive.value = index;
+  }
+};
 
 const checkTitle = (title) => {
   if (title == "Sign Out") {

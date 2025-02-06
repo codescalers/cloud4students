@@ -122,11 +122,11 @@ const onSubmit = async () => {
     .login(email.value, password.value)
     .then(async (response) => {
       await store.getUserInfo();
-      toast.value.toast(response.data.msg, "#4caf50");
+      toast.value.toast(response.data.msg, "#4caf50"); // FIXME both error and success messages
       router.push("/");
     })
-    .catch((error) => {
-      toast.value.toast(error, "#FF5252");
+    .catch((response) => {
+      toast.value.toast(response, "#FF5252");
     });
 };
 </script>

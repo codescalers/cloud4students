@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import router from "@/router";
 import userService from "@/services/userService";
 
 export const useUserStore = defineStore("userStore", {
@@ -27,7 +28,12 @@ export const useUserStore = defineStore("userStore", {
         const { user } = response.data.data;
         this.user = user;
       } catch (error) {
-        console.error("Failed to fetch user info:", error);
+        if (error.response.status == 401) {
+          localStorage.removeItem("token");
+          router.push("/login");
+          return error
+        }
+        return error
       } finally {
         this.isLoaded = true;
       }

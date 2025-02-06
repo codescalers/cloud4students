@@ -174,12 +174,11 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const isAuthenticated = localStorage.getItem("token") !== null;
   const store = useUserStore();
-  
+
   if (to.meta.requiresAuth && !isAuthenticated) {
-    console.log('!isAuthenticated')
     next("/");
   } else {
-    if (!store.user) await store.getUserInfo();
+    if (!store.user && isAuthenticated) await store.getUserInfo();
     next();
   }
 });

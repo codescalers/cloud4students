@@ -80,8 +80,9 @@ export default {
   },
 
   logout() {
-    clearInterval(refreshInterval);
     localStorage.removeItem("token");
+    clearInterval(refreshInterval);
+    router.push("/login");
   },
 
   async forgotPassword(email) {
