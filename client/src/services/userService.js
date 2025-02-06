@@ -14,7 +14,7 @@ const authClient = () =>
     },
   });
 
-authClient().interceptors.response.use(
+axios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
