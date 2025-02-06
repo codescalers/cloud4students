@@ -144,7 +144,9 @@ function activateVoucher() {
   userService
     .activateVoucher(voucher.value)
     .then((response) => {
+      
       toast.value.toast(response.data.msg, "#4caf50");
+
     })
     .catch((response) => {
       const { err } = response.response.data;

@@ -98,26 +98,25 @@ const resources = ref([
 ]);
 
 const nameValidation = ref([
-  (value) => {
+  async (value) => {
     if (!value) return "Name is required";
     if (value && (value.length < 3 || value.length > 20))
       return "Name needs to be more than 2 characters and less than 20";
     if (!/^[a-z]+$/.test(value))
       return "Name can only include lowercase alphabetic characters";
-    return true;
+
+    const errorMessage = await validateVMName(value);
+    return errorMessage || true;
   },
-  (value) => validateVMName(value),
 ]);
 
-function validateVMName(name) {
-  let msg = "";
-  userService.validateVMName(name).catch((response) => {
+async function validateVMName(name) {
+  try {
+    await userService.validateVMName(name);
+    return null;
+  } catch (response) {
     const { err } = response.response.data;
-    msg = err;
-    toast.value.toast(err, "#FF5252");
-  });
-  if (msg) {
-    return false;
+    return err;
   }
 }
 
