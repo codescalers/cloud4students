@@ -126,7 +126,8 @@ const onSubmit = async () => {
       router.push("/");
     })
     .catch((response) => {
-      toast.value.toast(response, "#FF5252");
+      const { err } = response.response.data;
+      toast.value.toast(err, "#FF5252");
     });
 };
 </script>
