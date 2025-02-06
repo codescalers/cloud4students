@@ -56,19 +56,20 @@
           >Choose your Top-up amount:</v-card-title
         >
         <v-form v-model="verify" @submit.prevent="chargeBalance">
-          <div class="d-flex align-center w-50 mb-5">
-            <v-icon size="25"> mdi-currency-usd </v-icon>
+          <div class="d-flex w-50 mb-5">
+            <v-icon class="mt-2" size="25"> mdi-currency-usd </v-icon>
             <BaseInput
               placeholder="Enter custom amount"
               class="mr-5"
               v-model="amount"
-              hide-details
+              :rules="amountValidation"
               :disabled="selection"
             />
 
             <v-chip-group
               v-model="selection"
               :disabled="amount > 0"
+              class="pt-0"
               selected-class="bg-secondary"
             >
               <v-chip
@@ -77,6 +78,7 @@
                 class="px-5"
                 :value="amount"
                 label
+                hide-details
                 variant="outlined"
                 >${{ amount }}</v-chip
               >
@@ -129,7 +131,7 @@ const verifyVoucher = ref(false);
 const toast = ref(null);
 const store = useUserStore();
 const { user } = storeToRefs(store);
-const balance = ref(user.value.balance);
+const balance = ref(user.value.balance + user.value.voucher_balance);
 const defaultCard = ref(user.value.stripe_default_payment_id);
 const voucher = ref();
 const amount = ref(null);
@@ -138,15 +140,23 @@ const amounts = ref(["50", "100"]);
 function required(v) {
   return !!v || "Field is required";
 }
+
+const amountValidation = ref([
+  (value) => {
+    if (value && value < 5) return "Amount should be greater than $4";
+    if (!/^[0-9]+$/.test(value))
+      return "Please only enter numeric characters only for amount!";
+    return true;
+  },
+]);
+
 // FIXME after voucher is activated
 function activateVoucher() {
   loading.value = true;
   userService
     .activateVoucher(voucher.value)
     .then((response) => {
-      
       toast.value.toast(response.data.msg, "#4caf50");
-
     })
     .catch((response) => {
       const { err } = response.response.data;
