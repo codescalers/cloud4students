@@ -7,9 +7,11 @@ export const useUserStore = defineStore("userStore", {
     user: null,
     newUser: null,
     isLoaded: false,
+    notifications: [],
     maintenance: false,
     next_launch: false,
     next_launch_admin: false,
+    isAuthenticated: localStorage.getItem("token"),
   }),
   actions: {
     async login(email, password) {
@@ -17,9 +19,10 @@ export const useUserStore = defineStore("userStore", {
         const res = await userService.signIn(email, password);
         const { access_token } = res.data.data;
         localStorage.setItem("token", access_token);
+        this.isLoaded = true;
         return res;
       } catch (error) {
-        return error;
+        if (error) throw error;
       }
     },
     async getUserInfo() {
@@ -31,11 +34,21 @@ export const useUserStore = defineStore("userStore", {
         if (error.response.status == 401) {
           localStorage.removeItem("token");
           router.push("/login");
-          return error
+          return error;
         }
-        return error
+        return error;
       } finally {
         this.isLoaded = true;
+      }
+    },
+
+    async startSSE() {
+      try {
+        await userService.SSE((notification) => {
+          this.notifications.push(notification);
+        });
+      } catch (error) {
+        console.error("Error starting SSE:", error);
       }
     },
 

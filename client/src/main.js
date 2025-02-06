@@ -17,7 +17,7 @@ import "mosha-vue-toastify/dist/style.css";
 import mitt from "mitt";
 
 const pinia = createPinia();
-
+import { useUserStore } from "./store/UserStore";
 // Plugins
 import { registerPlugins } from "@/plugins";
 
@@ -31,4 +31,8 @@ app.component("No-Navbar-Layout", NoNavbar);
 
 app.provide("emitter", emitter);
 
-app.use(pinia).use(moshaToast).mount("#app");
+app.use(pinia);
+const store = useUserStore();
+store.startSSE();
+
+app.use(moshaToast).mount("#app");

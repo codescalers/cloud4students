@@ -51,6 +51,12 @@ export default {
       });
   },
 
+  async SSE() {
+    return await authClient().get("/notification/stream", {
+      responseType: "stream",
+    });
+  },
+
   // user
   async getUser() {
     return await authClient().get("/user");

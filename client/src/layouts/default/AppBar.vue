@@ -130,11 +130,11 @@ import { useUserStore } from "@/store/UserStore";
 import userService from "@/services/userService";
 
 const drawer = ref(false);
-const notifications = ref([]);
 const isActive = ref(0);
 const toast = ref(null);
 const store = useUserStore();
-const { user, isLoading, getUserInfo } = storeToRefs(store);
+const { user, isLoading, notifications } = storeToRefs(store);
+
 const navItems = ref([
   { title: "Home", path: "/" },
   { title: "Virtual Machines", path: "/vm" },
@@ -184,28 +184,8 @@ const seen = (id) => {
   });
 };
 
-async function runSSE() {
-  const token = localStorage.getItem("token");
-  if (!token) return;
-  const response = await fetch("http://localhost:3000/v1/notification/stream", {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    console.error("Failed to connect to SSE endpoint");
-    return;
-  }
-  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-  let finished = false;
-  while (!finished) {
-    const { done } = await reader.read();
-    if (done) break;
-  }
-}
 onMounted(async () => {
-  if (!user.value) await getUserInfo;
   getNotifications();
-  runSSE();
 });
 </script>
 
