@@ -12,17 +12,16 @@ import Toast from "./components/Toast.vue";
 
 const route = useRoute();
 const toast = ref();
-const isAuthenticated = localStorage.getItem('token');
+const isAuthenticated = localStorage.getItem("token");
 
 const layout = computed(() => {
-  const routeLayout = route.meta.layout || 'defaultLayout';
+  const routeLayout = route.meta.layout || "Default-Layout";
 
   if (route.path === "/") {
-    return isAuthenticated ? 'Default-Layout' : 'No-Navbar-Layout';
+    return isAuthenticated ? "Default-Layout" : "No-Navbar-Layout";
   }
-  return routeLayout === "Default" ? 'Default-Layout' : 'No-Navbar-Layout';
+  return routeLayout === "Default" ? "Default-Layout" : "No-Navbar-Layout";
 });
-
 </script>
 <style>
 body {
