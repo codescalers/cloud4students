@@ -9,8 +9,8 @@
           class="d-flex justify-center elevation-1"
           :hide-default-footer="events == 0"
         >
-          <template #[`item.action`]="{ item }">
-            {{ item.action.replace("_", ".") }}
+          <template #[`item.metadata`]="{ item }">
+            {{ item.metadata }}
           </template>
 
           <template #[`item.timestamp`]="{ item }">
@@ -33,7 +33,7 @@ const loading = ref(false);
 const headers = ref([
   {
     title: "Action",
-    key: "action",
+    key: "metadata",
   },
   {
     title: "Timestamp",
