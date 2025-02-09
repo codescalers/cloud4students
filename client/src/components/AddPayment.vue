@@ -4,7 +4,7 @@
       <BaseButton
         v-bind="activatorProps"
         class="my-5"
-        text="+ Add Payment Method"
+        text="+ Add Card"
         variant="outlined"
       />
     </template>
