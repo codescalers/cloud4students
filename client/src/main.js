@@ -14,22 +14,18 @@ import moshaToast from "mosha-vue-toastify";
 import Default from "./layouts/default/Default.vue";
 import NoNavbar from "./layouts/NoNavbar.vue";
 import "mosha-vue-toastify/dist/style.css";
-import mitt from "mitt";
 
 const pinia = createPinia();
 import { useUserStore } from "./store/UserStore";
 // Plugins
 import { registerPlugins } from "@/plugins";
 
-const emitter = mitt();
 const app = createApp(App);
 
 registerPlugins(app);
 
 app.component("Default-Layout", Default);
 app.component("No-Navbar-Layout", NoNavbar);
-
-app.provide("emitter", emitter);
 
 app.use(pinia);
 const store = useUserStore();
