@@ -48,7 +48,11 @@ export const useUserStore = defineStore("userStore", {
           this.notifications.push(notification);
         });
       } catch (error) {
-        console.error("Error starting SSE:", error);
+        if (error.response.status == 401) {
+          localStorage.removeItem("token");
+          router.push("/");
+          return error;
+        }
       }
     },
 
