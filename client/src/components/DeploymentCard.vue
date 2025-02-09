@@ -20,7 +20,10 @@
       <v-card-item>
         <v-card-title>
           <span class="text-capitalize">{{ resource.capacity }} VM</span>
-          <span class="float-right font-weight-bold"
+          <span class="float-right font-weight-bold" v-if="resource.publicIP"
+            >${{ resource.price + 5 }}/month</span
+          >
+          <span class="float-right font-weight-bold" v-else
             >${{ resource.price }}/month</span
           >
         </v-card-title>
@@ -55,7 +58,11 @@
           {{ resource.details }}
         </div>
 
-        <v-checkbox v-model="resource.publicIP" label="Public IP" hide-details/>
+        <v-checkbox
+          v-model="resource.publicIP"
+          label="Public IP"
+          hide-details
+        />
         <p>
           Adding a Public IP will increase the total monthly cost by <b>$5</b>.
         </p>
