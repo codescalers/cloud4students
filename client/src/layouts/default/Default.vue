@@ -4,6 +4,7 @@
     <DefaultView />
     <FooterComponent />
   </v-app>
+  <v-app v-else> <DefaultView /> </v-app>
 </template>
 
 <script setup>
