@@ -9,8 +9,7 @@ export const useUserStore = defineStore("userStore", {
     isLoaded: false,
     notifications: [],
     maintenance: false,
-    next_launch: false,
-    next_launch_admin: false,
+    next_launch_admin: true,
     isAuthenticated: localStorage.getItem("token"),
   }),
   actions: {
@@ -60,8 +59,16 @@ export const useUserStore = defineStore("userStore", {
       try {
         const response = await userService.nextLaunch();
         const { launched } = response.data.data;
-        this.next_launch = launched;
         this.next_launch_admin = launched;
+      } catch (error) {
+        return error;
+      }
+    },
+
+    async setNextLaunch(value) {
+      try {
+        const response = await userService.setNextLaunch(value);
+        return response
       } catch (error) {
         return error;
       }
@@ -79,5 +86,6 @@ export const useUserStore = defineStore("userStore", {
   },
   getters: {
     isUserLoaded: (state) => state.isLoaded,
+    isNextLaunchEnabled: (state) => state.next_launch_admin,
   },
 });

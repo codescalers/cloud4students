@@ -1,15 +1,74 @@
 <template>
-  <v-container style="max-width: 1700px" fill-height>
+  <v-container fluid>
+    <h5 class="text-h5 text-md-h4 font-weight-bold my-5">Admin Panel</h5>
+    <v-divider />
+
     <v-row>
-      <v-col>
-        <h5
-          class="text-h5 text-md-h4 font-weight-bold text-center my-10 secondary"
-        >
-          Admin Panel
-        </h5>
+      <v-col cols="12">
+        <v-card flat class="my-5">
+          <v-list-item>
+            <template v-slot:prepend>
+              <v-sheet class="px-5 py-3" border rounded
+                >Balance: {{ balance }} TFT</v-sheet
+              >
+
+              <v-sheet class="px-5 py-3 d-flex align-center">
+                <v-icon class="mr-2" size="35">mdi-server</v-icon>
+                <div>
+                  <span>Used VMs: {{ usedResources }} </span><br />
+                  <span>Deployed VMs: {{ deployedResources }} </span>
+                </div>
+              </v-sheet>
+
+              <v-sheet class="px-5 py-3 d-flex align-center">
+                <v-icon class="mr-2" size="45">mdi-ip</v-icon>
+                <div>
+                  <span>Used IPs: {{ usedIPs }} </span><br />
+                  <span>Reserved IPs: {{ reservedIPs }} </span>
+                </div>
+              </v-sheet>
+            </template>
+            <template v-slot:append>
+              <BaseButton
+                v-if="isNextLaunchEnabled"
+                @click="setNextLaunch"
+                text="Disable Launch"
+                color="error"
+                class="mr-2"
+              />
+              <BaseButton
+                v-else
+                @click="setNextLaunch"
+                text="Enable Launch"
+                color="success"
+                class="mr-2"
+              />
+
+              <BaseButton text="Generate a Voucher" color="success" />
+            </template>
+          </v-list-item>
+        </v-card>
       </v-col>
     </v-row>
+
     <v-row>
+      <v-col cols="12">
+        <v-card class="my-5">
+          <v-tabs v-model="activeTab" class="tabs">
+            <v-tab v-for="tab in tabs" :key="tab" :to="tab.route" exact>{{
+              tab.name
+            }}</v-tab>
+          </v-tabs>
+
+          <v-card-text>
+            <v-tabs-window v-model="activeTab">
+              <router-view></router-view>
+            </v-tabs-window>
+          </v-card-text>x``
+        </v-card>
+      </v-col>
+    </v-row>
+    <!-- <v-row>
       <v-col cols="12" md="8">
         <v-data-table
           v-model:items-per-page="itemsPerPage"
@@ -415,403 +474,281 @@
       :msg="message"
       :voucher="voucher"
       :reset="resetVoucher"
-    />
+    /> -->
+    <Toast ref="toast" />
   </v-container>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted, watch } from "vue";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import userService from "@/services/userService.js";
 import Toast from "@/components/Toast.vue";
-import Voucher from "@/components/Voucher.vue";
-import UserInfo from "@/components/UserInfo.vue";
-import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/store/UserStore";
+// import Voucher from "@/components/Voucher.vue";
+// import UserInfo from "@/components/UserInfo.vue";
+// import { useRouter } from "vue-router";
 
-export default {
-  components: {
-    BaseButton,
-    Toast,
-    Voucher,
-    UserInfo,
-  },
-  setup() {
-    const router = useRouter();
-    const confirm = ref(null);
-    const vouchersHeaders = ref([
-      { title: "No", key: "id" },
-      { title: "User", key: "user", sortable: false },
-      { title: "Updated at", key: "updated_at" },
-      { title: "Reason for Voucher", key: "reason", sortable: false },
-      { title: "VMs", key: "vms" },
-      { title: "Public IPs", key: "public_ips" },
-      { title: "Voucher", key: "voucher" },
-      { title: "Actions", key: "actions", sortable: false },
-    ]);
+// const router = useRouter();
+// const confirm = ref(null);
+// const vouchersHeaders = ref([
+//   { title: "No", key: "id" },
+//   { title: "User", key: "user", sortable: false },
+//   { title: "Updated at", key: "updated_at" },
+//   { title: "Reason for Voucher", key: "reason", sortable: false },
+//   { title: "VMs", key: "vms" },
+//   { title: "Public IPs", key: "public_ips" },
+//   { title: "Voucher", key: "voucher" },
+//   { title: "Actions", key: "actions", sortable: false },
+// ]);
 
-    const pendingVouchersHeaders = ref([
-      { title: "No", key: "id" },
-      { title: "User", key: "user", sortable: false },
-      { title: "Created at", key: "created_at" },
-      { title: "Reason for Voucher", key: "reason", sortable: false },
-      { title: "VMs", key: "vms" },
-      { title: "Public IPs", key: "public_ips" },
-      { title: "Actions", key: "actions", sortable: false },
-    ]);
+// const pendingVouchersHeaders = ref([
+//   { title: "No", key: "id" },
+//   { title: "User", key: "user", sortable: false },
+//   { title: "Created at", key: "created_at" },
+//   { title: "Reason for Voucher", key: "reason", sortable: false },
+//   { title: "VMs", key: "vms" },
+//   { title: "Public IPs", key: "public_ips" },
+//   { title: "Actions", key: "actions", sortable: false },
+// ]);
 
-    const usersHeaders = ref([
-      { title: "No", key: "id", sortable: false },
-      { title: "Name", key: "name", sortable: false },
-      { title: "VMs", key: "vms", sortable: false },
-      { title: "IPs", key: "public_ips", sortable: false },
-      { title: "Actions", key: "actions", sortable: false },
-    ]);
+// const usersHeaders = ref([
+//   { title: "No", key: "id", sortable: false },
+//   { title: "Name", key: "name", sortable: false },
+//   { title: "VMs", key: "vms", sortable: false },
+//   { title: "IPs", key: "public_ips", sortable: false },
+//   { title: "Actions", key: "actions", sortable: false },
+// ]);
 
-    const form = ref(null);
-    const vouchers = ref([]);
-    const pendingVouchers = ref([]);
-    const users = ref([]);
-    const toast = ref(null);
-    const loading = ref(false);
-    const usedResources = ref(0);
-    const deployedResources = ref(0);
-    const balance = ref(0);
-    const usedIPs = ref(0);
-    const reservedIPs = ref(0);
-    const approveAllCount = ref(null);
-    const userInfo = ref(null);
-    const itemsPerPage = ref(5);
-    const dialog = ref(false);
-    const announcementDialog = ref(false);
-    const showUserInfo = ref(false);
-    const vms = ref(1);
-    const ips = ref(0);
-    const length = ref(3);
-    const message = ref(null);
-    const voucher = ref(null);
-    const subject = ref(null);
-    const announcement = ref(null);
-    const nextLaunchDialog = ref(false);
+// const form = ref(null);
 
-    nextLaunchDialog.value = localStorage.getItem("nextlaunchadmin") == "true";
+const users = ref([]);
+const toast = ref();
+const tabs = ref([
+  { name: "Users Requests", route: `/admin` },
+  { name: "Users History", route: `/admin/history` },
+]);
+const activeTab = ref(tabs.value[0]);
 
-    const requiredRules = ref([
-      (value) => {
-        if (value === "") return "Field is required";
-        return true;
-      },
-    ]);
+// const loading = ref(false);
+const usedResources = ref(0);
+const deployedResources = ref(0);
+const balance = ref(0);
+const usedIPs = ref(0);
+const reservedIPs = ref(0);
+// const itemsPerPage = ref(5);
+const dialog = ref(false);
+const announcementDialog = ref(false);
+// const showUserInfo = ref(false);
+const vms = ref(1);
+const ips = ref(0);
+const length = ref(3);
+// const message = ref(null);
+// const voucher = ref(null);
+const subject = ref(null);
+const announcement = ref(null);
+const nextLaunchDialog = ref(false);
+const store = useUserStore();
+const { isNextLaunchEnabled } = storeToRefs(store);
+nextLaunchDialog.value = localStorage.getItem("nextlaunchadmin") == "true";
 
-    const setAdmin = (user, admin) => {
-      userService
-        .setAdmin(user.email, admin)
-        .then((response) => {
-          toast.value.toast(response.data.msg, "#388E3C");
+// const requiredRules = ref([
+//   (value) => {
+//     if (value === "") return "Field is required";
+//     return true;
+//   },
+// ]);
 
-          userService.getUser().then((response) => {
-            const current_user = response.data.data.user;
-            if (!current_user.admin) {
-              router.push({
-                name: "Home",
-              });
-            }
-          });
+// const setAdmin = (user, admin) => {
+//   userService
+//     .setAdmin(user.email, admin)
+//     .then((response) => {
+//       toast.value.toast(response.data.msg, "#388E3C");
 
-          getUsers();
-        })
-        .catch((response) => {
-          const { err } = response.response.data;
-          toast.value.toast(err, "#FF5252");
-        });
-    };
+//       userService.getUser().then((response) => {
+//         const current_user = response.data.data.user;
+//         if (!current_user.admin) {
+//           router.push({
+//             name: "Home",
+//           });
+//         }
+//       });
 
-    const openUserInfo = (user) => {
-      showUserInfo.value = true;
-      userInfo.value = user;
-    };
+//       getUsers();
+//     })
+//     .catch((response) => {
+//       const { err } = response.response.data;
+//       toast.value.toast(err, "#FF5252");
+//     });
+// };
 
-    const getVouchers = () => {
-      userService
-        .getVouchers()
-        .then((response) => {
-          const { data } = response.data;
-          approveAllCount.value = 0;
+// const openUserInfo = (user) => {
+//   showUserInfo.value = true;
+//   userInfo.value = user;
+// };
 
-          let updateDataPromise = data.map(function (voucher) {
-            return new Promise(function (resolve) {
-              setTimeout(() => {
-                if (!voucher?.approved && !voucher?.rejected) {
-                  approveAllCount.value++;
-                }
-
-                if (voucher.user_id) {
-                  userInfo.value = users?.value?.find(
-                    (user) => user.user_id === voucher.user_id
-                  );
-                  if (voucher.user_id === userInfo?.value?.user_id) {
-                    Object.assign(voucher, {
-                      email: userInfo?.value?.email,
-                      name: userInfo?.value?.name,
-                    });
-                  }
-                }
-                resolve();
-              }, 10);
-            });
-          });
-
-          Promise.all(updateDataPromise).then(function () {
-            vouchers.value = data.filter(
-              (voucher) => voucher.approved || voucher.rejected
-            );
-            pendingVouchers.value = data.filter(
-              (voucher) => !voucher.approved && !voucher.rejected
-            );
-          });
-        })
-        .catch((response) => {
-          const { err } = response.response.data;
-          toast.value.toast(err, "#FF5252");
-        });
-    };
-
-    const approveVoucher = (id, approved) => {
-      userService
-        .approveVoucher(id, approved)
-        .then((response) => {
-          toast.value.toast(response.data.msg, "#388E3C");
-          getVouchers();
-        })
-        .catch((response) => {
-          const { err } = response.response.data;
-          toast.value.toast(err, "#FF5252");
-        });
-    };
-
-    const approveAllVouchers = () => {
-      userService
-        .approveAllVouchers()
-        .then((response) => {
-          toast.value.toast(response.data.msg, "#388E3C");
-          getVouchers();
-        })
-        .catch((response) => {
-          const { err } = response.response.data;
-          toast.value.toast(err, "#FF5252");
-        });
-    };
-
-    const getUsers = () => {
-      userService
-        .getUsers()
-        .then((response) => {
-          const { data } = response.data;
-          users.value = data;
-          users.value.map((usedData) => {
-            usedResources.value += usedData.used_vms;
-            usedIPs.value += usedData.used_public_ips;
-          });
-        })
-        .catch((response) => {
-          const { err } = response.response.data;
-          toast.value.toast(err, "#FF5252");
-        });
-    };
-
-    const getDeploymentsCount = () => {
-      userService
-        .getDeploymentsCount()
-        .then((response) => {
-          const { data } = response.data;
-          deployedResources.value += data.vms;
-          reservedIPs.value += data.ips;
-        })
-        .catch((response) => {
-          const { err } = response.response.data;
-          toast.value.toast(err, "#FF5252");
-        });
-    };
-
-    const getBalance = () => {
-      userService
-        .getBalance()
-        .then((response) => {
-          const { data } = response.data;
-          balance.value = data;
-        })
-        .catch((response) => {
-          const { err } = response.response.data;
-          toast.value.toast(err, "#FF5252");
-        });
-    };
-
-    const addAvatar = (name) => {
-      return name.charAt(0);
-    };
-
-    if (localStorage.getItem("token")) {
-      setInterval(() => {
-        getBalance();
-      }, 30 * 1000);
-    }
-
-    watch(dialog, (val) => {
-      if (val) {
-        vms.value = 1;
-        ips.value = 0;
-        length.value = 3;
-      }
-    });
-
-    watch(announcementDialog, (val) => {
-      if (val) {
-        announcement.value = "";
-        subject.value = "";
-      }
-    });
-
-    const generateVoucher = async () => {
-      var { valid } = await form.value.validate();
-      if (!valid) return;
-
-      userService
-        .generateVoucher(+length.value, +vms.value, +ips.value)
-        .then((response) => {
-          const { data, msg } = response.data;
-          message.value = msg;
-          voucher.value = data.voucher;
-        })
-        .catch((response) => {
-          toast.value.toast(response.response.data.err, "#FF5252");
-        })
-        .finally(() => {
-          getVouchers();
-          dialog.value = false;
-        });
-    };
-
-    const sendAnnouncement = async () => {
-      var { valid } = await form.value.validate();
-      if (!valid) return;
-
-      userService
-        .sendAnnouncement(subject.value, announcement.value)
-        .then((response) => {
-          const { msg } = response.data;
-          toast.value.toast(msg, "#388E3C");
-        })
-        .catch((response) => {
-          toast.value.toast(response.response.data.err, "#FF5252");
-        })
-        .finally(() => {
-          announcementDialog.value = false;
-        });
-    };
-    const setNextLaunch = async () => {
-      await userService.nextLaunch();
-      await userService
-        .setNextLaunch(!(localStorage.getItem("nextlaunchadmin") == "true"))
-        .then((response) => {
-          if (response.status == 200) {
-            nextLaunchDialog.value = !nextLaunchDialog.value;
-          }
-        });
-    };
-
-    const resetVoucher = () => {
-      message.value = null;
-      voucher.value = null;
-    };
-
-    const dateIsNull = (date) => {
-      return (
-        new Date(date).toLocaleString() ==
-        new Date("0001-01-01").toLocaleString()
-      );
-    };
-
-    const stringDate = (date) => {
-      return new Date(date).toLocaleString();
-    };
-
-    onMounted(() => {
-      let token = localStorage.getItem("token");
-      if (token) {
-        getUsers();
-        getVouchers();
-        getBalance();
-        getDeploymentsCount();
-      }
-    });
-
-    return {
-      vouchersHeaders,
-      pendingVouchersHeaders,
-      vouchers,
-      pendingVouchers,
-      usedResources,
-      usedIPs,
-      deployedResources,
-      reservedIPs,
-      balance,
-      approveAllCount,
-      usersHeaders,
-      users,
-      userInfo,
-      loading,
-      confirm,
-      toast,
-      itemsPerPage,
-      dialog,
-      announcementDialog,
-      showUserInfo,
-      vms,
-      ips,
-      length,
-      requiredRules,
-      voucher,
-      message,
-      form,
-      announcement,
-      subject,
-      getVouchers,
-      getBalance,
-      approveVoucher,
-      approveAllVouchers,
-      getUsers,
-      addAvatar,
-      generateVoucher,
-      resetVoucher,
-      getDeploymentsCount,
-      openUserInfo,
-      setAdmin,
-      sendAnnouncement,
-      dateIsNull,
-      stringDate,
-      setNextLaunch,
-      nextLaunchDialog,
-    };
-  },
-  beforeRouteEnter(to, from, next) {
-    userService
-      .getUser()
-      .then((response) => {
-        const { user } = response.data.data;
-        const isAdmin = user.admin;
-        if (isAdmin) {
-          next();
-        } else {
-          next("/home");
-        }
-      })
-      .catch((err) => {
-        console.log(err);
+const getUsers = () => {
+  userService
+    .getUsers()
+    .then((response) => {
+      const { data } = response.data;
+      users.value = data;
+      users.value.map((usedData) => {
+        // FIXME
+        usedResources.value += usedData.used_vms;
+        usedIPs.value += usedData.used_public_ips;
       });
-  },
+    })
+    .catch((response) => {
+      const { err } = response.response.data;
+      toast.value.toast(err, "#FF5252");
+    });
 };
+
+const getDeploymentsCount = () => {
+  userService
+    .getDeploymentsCount()
+    .then((response) => {
+      const { data } = response.data;
+      deployedResources.value += data.vms;
+      reservedIPs.value += data.ips;
+    })
+    .catch((response) => {
+      const msg = response.message;
+      toast.value.toast(msg, "#FF5252");
+    });
+};
+
+const getBalance = () => {
+  userService
+    .getBalance()
+    .then((response) => {
+      const { data } = response.data;
+      balance.value = data;
+    })
+    .catch((response) => {
+      const { err } = response.response.data;
+      toast.value.toast(err, "#FF5252");
+    });
+};
+
+if (localStorage.getItem("token")) {
+  setInterval(() => {
+    getBalance();
+  }, 30 * 1000);
+}
+
+watch(dialog, (val) => {
+  if (val) {
+    vms.value = 1;
+    ips.value = 0;
+    length.value = 3;
+  }
+});
+
+watch(announcementDialog, (val) => {
+  if (val) {
+    announcement.value = "";
+    subject.value = "";
+  }
+});
+
+// TODO generate voucher
+// const generateVoucher = async () => {
+//   var { valid } = await form.value.validate();
+//   if (!valid) return;
+
+//   userService
+//     .generateVoucher(+length.value, +vms.value, +ips.value)
+//     .then((response) => {
+//       const { data, msg } = response.data;
+//       message.value = msg;
+//       voucher.value = data.voucher;
+//     })
+//     .catch((response) => {
+//       toast.value.toast(response.response.data.err, "#FF5252");
+//     })
+//     .finally(() => {
+//       getVouchers();
+//       dialog.value = false;
+//     });
+// };
+
+// const sendAnnouncement = async () => {
+//   var { valid } = await form.value.validate();
+//   if (!valid) return;
+
+//   userService
+//     .sendAnnouncement(subject.value, announcement.value)
+//     .then((response) => {
+//       const { msg } = response.data;
+//       toast.value.toast(msg, "#388E3C");
+//     })
+//     .catch((response) => {
+//       toast.value.toast(response.response.data.err, "#FF5252");
+//     })
+//     .finally(() => {
+//       announcementDialog.value = false;
+//     });
+// };
+function setNextLaunch() {
+  store
+    .setNextLaunch(!isNextLaunchEnabled.value)
+    .then((response) => {
+      const { msg } = response.data;
+      toast.value.toast(msg, "#388E3C");
+      store.getNextLaunch();
+    })
+    .catch((response) => {
+      const { err } = response.response.data;
+      toast.value.toast(err, "#FF5252");
+    });
+}
+
+// const resetVoucher = () => {
+//   message.value = null;
+//   voucher.value = null;
+// };
+
+// const dateIsNull = (date) => {
+//   return (
+//     new Date(date).toLocaleString() == new Date("0001-01-01").toLocaleString()
+//   );
+// };
+
+// const stringDate = (date) => {
+//   return new Date(date).toLocaleString();
+// };
+
+onMounted(() => {
+  let token = localStorage.getItem("token");
+  if (token) {
+    getUsers();
+    // getVouchers();
+    getBalance();
+    getDeploymentsCount();
+  }
+});
+// beforeRouteEnter(to, from, next) {
+//   userService
+//     .getUser()
+//     .then((response) => {
+//       const { user } = response.data.data;
+//       const isAdmin = user.admin;
+//       if (isAdmin) {
+//         next();
+//       } else {
+//         next("/home");
+//       }
+//     })
+//     .catch((err) => {
+//       console.log(err);
+//     });
+// },
 </script>
 
-<style>
+<!-- <style>
 .resources {
   margin-top: 0.5rem;
 }
@@ -827,4 +764,4 @@ td {
 .shadow {
   box-shadow: 0px 2px 4px 2px rgba(0, 0, 0, 0.1);
 }
-</style>
+</style> -->
