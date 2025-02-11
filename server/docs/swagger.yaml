@@ -35,13 +35,9 @@ definitions:
     type: object
   app.ApplyForVoucherInput:
     properties:
-      balance:
-        minimum: 0
-        type: integer
       reason:
         type: string
     required:
-    - balance
     - reason
     type: object
   app.ChangePasswordInput:
