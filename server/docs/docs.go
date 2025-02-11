@@ -2712,14 +2712,9 @@ const docTemplate = `{
         "app.ApplyForVoucherInput": {
             "type": "object",
             "required": [
-                "balance",
                 "reason"
             ],
             "properties": {
-                "balance": {
-                    "type": "integer",
-                    "minimum": 0
-                },
                 "reason": {
                     "type": "string"
                 }
