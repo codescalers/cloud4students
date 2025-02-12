@@ -870,8 +870,6 @@ func TestApplyForVoucherHandler(t *testing.T) {
 	assert.NoError(t, err)
 
 	voucherBody := []byte(`{
-		"vms":10,
-		"public_ips":1,
 		"reason":"strongReason"
 	}`)
 
