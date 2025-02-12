@@ -43,7 +43,7 @@
           </v-btn>
         </v-toolbar-items>
         <v-btn class="text-capitalize" flat>
-          Balance: ${{ user?.balance }}
+          Balance: ${{ getTotalBalance }}
         </v-btn>
         <v-menu id="notifications" location="bottom">
           <template v-slot:activator="{ props }">
@@ -133,7 +133,7 @@ const drawer = ref(false);
 const isActive = ref(0);
 const toast = ref(null);
 const store = useUserStore();
-const { user, isLoading, notifications } = storeToRefs(store);
+const { user, isLoading, notifications, getTotalBalance } = storeToRefs(store);
 
 const navItems = ref([
   { title: "Home", path: "/" },

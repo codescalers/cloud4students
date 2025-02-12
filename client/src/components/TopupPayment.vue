@@ -14,7 +14,7 @@
           </div>
 
           <v-sheet class="d-flex flex-column pa-5 align-center" color="primary">
-            <p class="font-weight-bold">${{ balance }}</p>
+            <p class="font-weight-bold">${{ getTotalBalance }}</p>
             <span class="text-disabled text-capitalize mt-1"
               >current balance</span
             >
@@ -111,7 +111,7 @@
   </v-row>
 </template>
 <script setup>
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import BaseInput from "./Form/BaseInput.vue";
 import BaseButton from "./Form/BaseButton.vue";
 import userService from "@/services/userService";
@@ -130,8 +130,7 @@ const loading = ref(false);
 const verifyVoucher = ref(false);
 const toast = ref(null);
 const store = useUserStore();
-const { user } = storeToRefs(store);
-const balance = ref(user.value.balance + user.value.voucher_balance);
+const { user, getTotalBalance } = storeToRefs(store);
 const defaultCard = ref(user.value.stripe_default_payment_id);
 const voucher = ref();
 const amount = ref(null);
@@ -187,14 +186,4 @@ async function chargeBalance() {
       await store.getUserInfo();
     });
 }
-
-watch(
-  user,
-  (newVal) => {
-    if (newVal) {
-      balance.value = newVal.balance;
-    }
-  },
-  { immediate: true }
-);
 </script>

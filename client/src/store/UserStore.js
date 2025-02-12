@@ -32,7 +32,7 @@ export const useUserStore = defineStore("userStore", {
       } catch (error) {
         if (error.response.status == 401) {
           localStorage.removeItem("token");
-          router.push("/login");
+          router.push("/");
           return error;
         }
         return error;
@@ -68,7 +68,7 @@ export const useUserStore = defineStore("userStore", {
     async setNextLaunch(value) {
       try {
         const response = await userService.setNextLaunch(value);
-        return response
+        return response;
       } catch (error) {
         return error;
       }
@@ -87,5 +87,7 @@ export const useUserStore = defineStore("userStore", {
   getters: {
     isUserLoaded: (state) => state.isLoaded,
     isNextLaunchEnabled: (state) => state.next_launch_admin,
+    getTotalBalance: (state) => state.user.balance + state.user.voucher_balance,
+    isAdmin: (state) => state.user.admin,
   },
 });
