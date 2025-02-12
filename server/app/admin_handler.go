@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/codescalers/cloud4students/internal"
 	"github.com/codescalers/cloud4students/models"
+	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/validator.v2"
 	"gorm.io/gorm"
@@ -53,9 +55,11 @@ type SetPricesInput struct {
 	PublicIP float64 `json:"public_ip"`
 }
 
-type ListDeploymentsResponse struct {
-	VMs []models.VM         `json:"vms"`
-	K8S []models.K8sCluster `json:"k8s"`
+type UserResponse struct {
+	*models.User
+	VMs   []models.VM             `json:"vms"`
+	K8S   []models.K8sCluster     `json:"k8s"`
+	Count models.DeploymentsCount `json:"count"`
 }
 
 // GetAllUsersHandler returns all users
@@ -66,7 +70,7 @@ type ListDeploymentsResponse struct {
 // @Accept  json
 // @Produce  json
 // @Security BearerAuth
-// @Success 200 {object} []models.User
+// @Success 200 {object} []UserResponse
 // @Failure 400 {object} Response
 // @Failure 401 {object} Response
 // @Failure 404 {object} Response
@@ -86,9 +90,40 @@ func (a *App) GetAllUsersHandler(req *http.Request) (interface{}, Response) {
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	var allUsers []UserResponse
+
+	for _, user := range users {
+		// vms
+		vms, err := a.db.GetAllVms(user.ID.String())
+		if err != nil && err != gorm.ErrRecordNotFound {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
+		// k8s clusters
+		clusters, err := a.db.GetAllK8s(user.ID.String())
+		if err != nil && err != gorm.ErrRecordNotFound {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
+		count, err := a.db.CountUserDeployments(user.ID.String())
+		if err != nil && err != gorm.ErrRecordNotFound {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
+		allUsers = append(allUsers, UserResponse{
+			User:  &user,
+			VMs:   vms,
+			K8S:   clusters,
+			Count: count,
+		})
+	}
+
 	return ResponseMsg{
 		Message: "Users are found",
-		Data:    users,
+		Data:    allUsers,
 	}, Ok()
 }
 
@@ -240,6 +275,71 @@ func (a *App) GetBalanceHandler(req *http.Request) (interface{}, Response) {
 	}, Ok()
 }
 
+// DeleteVMDeploymentHandler deletes a virtual machine
+// Example endpoint: Deletes a virtual machine
+// @Summary Deletes a virtual machine
+// @Description Deletes a virtual machine
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param id path string true "Virtual machine ID"
+// @Success 200 {object} Response
+// @Failure 400 {object} Response
+// @Failure 401 {object} Response
+// @Failure 404 {object} Response
+// @Failure 500 {object} Response
+// @Router /deployments/vm/{id} [delete]
+func (a *App) DeleteVMDeploymentHandler(req *http.Request) (interface{}, Response) {
+	id, err := strconv.Atoi(mux.Vars(req)["id"])
+	if err != nil {
+		return nil, BadRequest(errors.New("failed to read deployment id"))
+	}
+
+	if err = a.db.DeleteVMByID(id); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	return ResponseMsg{
+		Message: "Virtual machine is deleted successfully",
+	}, Ok()
+}
+
+// DeleteK8sDeploymentHandler deletes a kubernetes cluster
+// Example endpoint: Deletes a kubernetes cluster
+// @Summary Deletes a kubernetes cluster
+// @Description Deletes a kubernetes cluster
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Param id path string true "Kubernetes cluster ID"
+// @Success 200 {object} Response
+// @Failure 400 {object} Response
+// @Failure 401 {object} Response
+// @Failure 404 {object} Response
+// @Failure 500 {object} Response
+// @Router /deployments/k8s/{id} [delete]
+func (a *App) DeleteK8sDeploymentHandler(req *http.Request) (interface{}, Response) {
+	id, err := strconv.Atoi(mux.Vars(req)["id"])
+	if err != nil {
+		return nil, BadRequest(errors.New("failed to read deployment id"))
+	}
+
+	if err = a.db.DeleteK8s(id); err == gorm.ErrRecordNotFound {
+		return nil, NotFound(errors.New("kubernetes cluster is not found"))
+	}
+	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	return ResponseMsg{
+		Message: "Kubernetes cluster is deleted successfully",
+	}, Ok()
+}
+
 // DeleteAllDeploymentsHandler deletes all users' deployments
 // Example endpoint: Deletes all users' deployments
 // @Summary Deletes all users' deployments
@@ -326,70 +426,6 @@ func (a *App) DeleteAllDeploymentsHandler(req *http.Request) (interface{}, Respo
 
 	return ResponseMsg{
 		Message: "Deployments are deleted successfully",
-	}, Ok()
-}
-
-// ListDeploymentsHandler lists all users' deployments
-// Example endpoint: List all users' deployments
-// @Summary List all users' deployments
-// @Description List all users' deployments
-// @Tags Admin
-// @Accept  json
-// @Produce  json
-// @Security BearerAuth
-// @Success 200 {object} ListDeploymentsResponse
-// @Failure 400 {object} Response
-// @Failure 401 {object} Response
-// @Failure 404 {object} Response
-// @Failure 500 {object} Response
-// @Router /deployments [get]
-func (a *App) ListDeploymentsHandler(req *http.Request) (interface{}, Response) {
-	users, err := a.db.ListAllUsers()
-	if err == gorm.ErrRecordNotFound || len(users) == 0 {
-		return ResponseMsg{
-			Message: "Users are not found",
-		}, Ok()
-	}
-
-	if err != nil {
-		log.Error().Err(err).Send()
-		return nil, InternalServerError(errors.New(internalServerErrorMsg))
-	}
-
-	var allVMs []models.VM
-	var allClusters []models.K8sCluster
-
-	for _, user := range users {
-		// vms
-		vms, err := a.db.GetAllVms(user.ID.String())
-		if err == gorm.ErrRecordNotFound || len(vms) == 0 {
-			log.Error().Err(err).Str("userID", user.ID.String()).Msg("Virtual machines are not found")
-			continue
-		}
-		if err != nil {
-			log.Error().Err(err).Send()
-			return nil, InternalServerError(errors.New(internalServerErrorMsg))
-		}
-
-		allVMs = append(allVMs, vms...)
-
-		// k8s clusters
-		clusters, err := a.db.GetAllK8s(user.ID.String())
-		if err == gorm.ErrRecordNotFound || len(clusters) == 0 {
-			log.Error().Err(err).Str("userID", user.ID.String()).Msg("Kubernetes clusters are not found")
-			continue
-		}
-		if err != nil {
-			log.Error().Err(err).Send()
-			return nil, InternalServerError(errors.New(internalServerErrorMsg))
-		}
-
-		allClusters = append(allClusters, clusters...)
-	}
-
-	return ResponseMsg{
-		Message: "Deployments are listed successfully",
-		Data:    ListDeploymentsResponse{VMs: allVMs, K8S: allClusters},
 	}, Ok()
 }
 
