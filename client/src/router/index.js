@@ -147,6 +147,14 @@ const routes = [
     path: "/admin",
     name: "Admin",
     component: Admin,
+    beforeEnter(to, from, next) {
+      const store = useUserStore();
+
+      if (!store.isAdmin) {
+        next("/");
+      }
+      next();
+    },
     meta: {
       layout: "Default",
       requiresAuth: true,
