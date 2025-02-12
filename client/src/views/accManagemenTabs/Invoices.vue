@@ -19,7 +19,7 @@
           :hide-default-footer="invoices == 0"
         >
           <template #[`item.created_at`]="{ item }">
-            {{ formatDate(item.created_at) }}
+            {{ timeAgo.format(convertDate(item.created_at)) }}
           </template>
 
           <template #[`item.invoice`]="{ item }">
@@ -52,7 +52,11 @@ import userService from "@/services/userService";
 import Toast from "@/components/Toast.vue";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "@/store/UserStore";
+import TimeAgo from "javascript-time-ago";
+import en from "javascript-time-ago/locale/en";
+TimeAgo.addLocale(en);
 
+const timeAgo = ref(new TimeAgo("en-US"));
 const invoices = ref();
 const toast = ref(null);
 const message = ref();
@@ -75,16 +79,8 @@ const headers = ref([
   },
 ]);
 
-function formatDate(date) {
-  var d = new Date(date),
-    month = "" + (d.getMonth() + 1),
-    day = "" + d.getDate(),
-    year = d.getFullYear();
-
-  if (month.length < 2) month = "0" + month;
-  if (day.length < 2) day = "0" + day;
-
-  return [day, month, year].join("-");
+function convertDate(date) {
+  return new Date(date);
 }
 
 // TODO handle invoices InvoiceID
