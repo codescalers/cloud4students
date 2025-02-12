@@ -87,7 +87,7 @@ export const useUserStore = defineStore("userStore", {
   getters: {
     isUserLoaded: (state) => state.isLoaded,
     isNextLaunchEnabled: (state) => state.next_launch_admin,
-    getTotalBalance: (state) => state.user.balance + state.user.voucher_balance,
+    getTotalBalance: (state) => state.user? state.user.balance + state.user.voucher_balance : 0,
     isAdmin: (state) => state.user.admin,
   },
 });
