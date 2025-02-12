@@ -199,7 +199,8 @@ func (a *App) registerHandlers() {
 	balanceRouter.HandleFunc("", WrapFunc(a.GetBalanceHandler)).Methods("GET", "OPTIONS")
 	maintenanceRouter.HandleFunc("", WrapFunc(a.UpdateMaintenanceHandler)).Methods("PUT", "OPTIONS")
 	deploymentsRouter.HandleFunc("", WrapFunc(a.DeleteAllDeploymentsHandler)).Methods("DELETE", "OPTIONS")
-	deploymentsRouter.HandleFunc("", WrapFunc(a.ListDeploymentsHandler)).Methods("GET", "OPTIONS")
+	deploymentsRouter.HandleFunc("/vm/{id}", WrapFunc(a.DeleteVMDeploymentHandler)).Methods("DELETE", "OPTIONS")
+	deploymentsRouter.HandleFunc("/k8s/{id}", WrapFunc(a.DeleteK8sDeploymentHandler)).Methods("DELETE", "OPTIONS")
 	deploymentsRouter.HandleFunc("/count", WrapFunc(a.GetDlsCountHandler)).Methods("GET", "OPTIONS")
 	nextLaunchRouter.HandleFunc("", WrapFunc(a.UpdateNextLaunchHandler)).Methods("PUT", "OPTIONS")
 

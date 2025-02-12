@@ -76,7 +76,8 @@ func SetUp(t testing.TB) *App {
 		"medium_vm": 20,
 		"large_vm": 30
 	},
-	"stripe_secret": "sk_test"
+	"stripe_secret": "sk_test",
+	"voucher_balance": 10
 }
 	`, dbPath)
 
