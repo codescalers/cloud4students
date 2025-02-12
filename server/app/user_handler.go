@@ -743,7 +743,7 @@ func (a *App) ApplyForVoucherHandler(req *http.Request) (interface{}, Response) 
 	}
 	middlewares.VoucherApplied.WithLabelValues(userID, voucher.Voucher, fmt.Sprint(voucher.Balance)).Inc()
 
-	if err := a.logUserVoucherApply(userID, a.config.Currency, input.Balance); err != nil {
+	if err := a.logUserVoucherApply(userID, a.config.Currency, a.config.VoucherBalance); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
