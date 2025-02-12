@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/codescalers/cloud4students/models"
@@ -235,18 +236,18 @@ func (in *InvoicePDF) invoiceSection() error {
 		return err
 	}
 
-	textWidth, err = in.pdf.MeasureTextWidth(in.invoice.CreatedAt.Format("June 1, 2020"))
+	textWidth, err = in.pdf.MeasureTextWidth(in.invoice.CreatedAt.Format("January 2, 2006"))
 	if err != nil {
 		return err
 	}
 
 	in.pdf.SetXY(in.startX+540-textWidth, in.startY+35)
-	if err := in.pdf.Cell(nil, in.invoice.CreatedAt.Format("June 1, 2020")); err != nil {
+	if err := in.pdf.Cell(nil, in.invoice.CreatedAt.Format("January 2, 2006")); err != nil {
 		return err
 	}
 
 	in.pdf.SetXY(in.startX+540-textWidth, in.startY+50)
-	return in.pdf.Cell(nil, in.invoice.CreatedAt.Format("June 1, 2020"))
+	return in.pdf.Cell(nil, in.invoice.CreatedAt.Format("January 2, 2006"))
 }
 
 func (in *InvoicePDF) userDetails() error {
@@ -297,14 +298,14 @@ func (in *InvoicePDF) summary() error {
 		return err
 	}
 
-	totalText := fmt.Sprintf("$%v", in.invoice.Total)
+	totalText := formatFloat(in.invoice.Total)
 	totalTextWidth, err := in.pdf.MeasureTextWidth(totalText)
 	if err != nil {
 		return err
 	}
 
 	in.pdf.SetXY(in.startX+540-totalTextWidth, in.startY+35)
-	return in.pdf.Cell(nil, fmt.Sprintf("$%v", in.invoice.Total))
+	return in.pdf.Cell(nil, formatFloat(in.invoice.Total))
 }
 
 func (in *InvoicePDF) totalDue() error {
@@ -317,14 +318,14 @@ func (in *InvoicePDF) totalDue() error {
 		return err
 	}
 
-	totalText := fmt.Sprintf("$%v", in.invoice.Total)
+	totalText := formatFloat(in.invoice.Total)
 	totalTextWidth, err := in.pdf.MeasureTextWidth(totalText)
 	if err != nil {
 		return err
 	}
 
 	in.pdf.SetXY(in.startX+540-totalTextWidth, in.startY)
-	if err := in.pdf.Cell(nil, fmt.Sprintf("$%v", in.invoice.Total)); err != nil {
+	if err := in.pdf.Cell(nil, formatFloat(in.invoice.Total)); err != nil {
 		return err
 	}
 
@@ -385,14 +386,14 @@ func (in *InvoicePDF) tableHeader() error {
 		return err
 	}
 
-	totalText := fmt.Sprintf("$%v", in.invoice.Total)
+	totalText := formatFloat(in.invoice.Total)
 	totalTextWidth, err := in.pdf.MeasureTextWidth(totalText)
 	if err != nil {
 		return err
 	}
 
 	in.pdf.SetXY(in.startX+540-totalTextWidth, in.startY)
-	if err := in.pdf.Cell(nil, fmt.Sprintf("$%v", in.invoice.Total)); err != nil {
+	if err := in.pdf.Cell(nil, formatFloat(in.invoice.Total)); err != nil {
 		return err
 	}
 
@@ -429,13 +430,13 @@ func (in *InvoicePDF) tableContent() error {
 			return err
 		}
 
-		costTextWidth, err := in.pdf.MeasureTextWidth(fmt.Sprintf("$%v", d.Cost))
+		costTextWidth, err := in.pdf.MeasureTextWidth(formatFloat(d.Cost))
 		if err != nil {
 			return err
 		}
 
 		in.pdf.SetXY(in.startX+540-costTextWidth, y)
-		if err := in.pdf.Cell(nil, fmt.Sprintf("$%v", d.Cost)); err != nil {
+		if err := in.pdf.Cell(nil, formatFloat(d.Cost)); err != nil {
 			return err
 		}
 
@@ -459,4 +460,13 @@ func (in *InvoicePDF) tableContent() error {
 	}
 
 	return nil
+}
+
+func formatFloat(f float64) string {
+	// Check if the number has a fractional part
+	if f == float64(int(f)) {
+		return strconv.Itoa(int(f))
+	}
+
+	return fmt.Sprintf("%.2f", f)
 }
