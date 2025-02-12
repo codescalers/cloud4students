@@ -109,9 +109,7 @@
           </template>
           <template #[`item.actions`]="{ item }">
             <v-icon class="mr-2">mdi-information</v-icon>
-            <v-icon
-              v-if="item.admin"
-              @click="setAdmin(item.email, !item.admin)"
+            <v-icon v-if="item.admin" @click="setAdmin(item.email, !item.admin)"
               >mdi-account-key</v-icon
             >
             <v-icon v-else @click="setAdmin(item.email, !item.admin)"
@@ -270,9 +268,7 @@ async function setAdmin(email, admin) {
     .then(async (response) => {
       toast.value.toast(response.data.msg, "#388E3C");
       if (!isAdmin) {
-        router.push({
-          name: "Home",
-        });
+        router.push("/");
       }
       await getUsers();
     })
