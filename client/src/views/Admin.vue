@@ -14,18 +14,12 @@
 
               <v-sheet class="px-5 py-3 d-flex align-center">
                 <v-icon class="mr-2" size="35">mdi-server</v-icon>
-                <div>
-                  <span>Used VMs: {{ usedResources }} </span><br />
-                  <span>Deployed VMs: {{ deployedResources }} </span>
-                </div>
+                <span>Deployed VMs: {{ deployedResources }} </span>
               </v-sheet>
 
               <v-sheet class="px-5 py-3 d-flex align-center">
-                <v-icon class="mr-2" size="45">mdi-ip</v-icon>
-                <div>
-                  <span>Used IPs: {{ usedIPs }} </span><br />
-                  <span>Reserved IPs: {{ reservedIPs }} </span>
-                </div>
+                <v-icon class="mr-2" size="35">mdi-ip</v-icon>
+                <span>Reserved IPs: {{ reservedIPs }} </span>
               </v-sheet>
             </template>
             <template v-slot:append>
@@ -64,7 +58,7 @@
             <v-tabs-window v-model="activeTab">
               <router-view></router-view>
             </v-tabs-window>
-          </v-card-text>x``
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>

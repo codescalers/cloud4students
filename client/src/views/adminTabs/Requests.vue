@@ -23,7 +23,7 @@
                 </p>
               </div>
             </div>
-            <div v-else>
+            <div class="d-flex align-center" v-else>
               <v-avatar color="warning" size="30" class="mr-2">
                 <span class="text-uppercase">A</span>
               </v-avatar>
@@ -33,7 +33,10 @@
             </div>
           </template>
           <template #[`item.created_at`]="{ item }">
-            {{ formatDate(item.created_at) }}
+            {{ timeAgo.format(convertDate(item.created_at)) }}
+          </template>
+          <template #[`item.balance`]="{ item }">
+            {{ item.balance > 0 ? `$${item.balance}` : item.balance }}
           </template>
           <template #[`item.actions`]="{ item }">
             <BaseButton
@@ -54,17 +57,16 @@
         </v-data-table>
         <div class="d-flex justify-end">
           <BaseButton
-            color="info"
+            color="secondary"
             text="Approve All"
             class="my-2"
-            :disabled="approveAllCount == 0"
+            :disabled="pendingVouchers > 0"
             @click="approveAllVouchers"
           />
         </div>
       </v-col>
       <v-col cols="12" md="4">
         <v-data-table
-          :loading="loading"
           :headers="usersHeaders"
           :items="users"
           class="d-flex justify-center elevation-1"
@@ -72,13 +74,15 @@
         >
           <template #[`item.id`]="{ index }"> {{ index + 1 }} </template>
 
-          <template #[`item.name`]="{ item }">
-            <div class="d-flex align-center" v-if="item.name">
+          <template #[`item.first_name`]="{ item }">
+            <div class="d-flex align-center" v-if="item.first_name">
               <v-avatar color="secondary" size="30" class="mr-2">
-                <span class="text-uppercase">{{ userAvatar(item.name) }}</span>
+                <span class="text-uppercase">{{
+                  userAvatar(item.first_name)
+                }}</span>
               </v-avatar>
               <div>
-                <p>{{ item.name }}</p>
+                <p>{{ item.first_name }}</p>
                 <p>
                   {{ item.email }}
                 </p>
@@ -93,12 +97,26 @@
               </div>
             </div>
           </template>
+          <template #[`item.count.vms`]="{ item }">
+            {{ item.count.vms }}
+          </template>
+          <template #[`item.count.ips`]="{ item }">
+            {{ item.count.ips }}
+          </template>
+
           <template #[`item.created_at`]="{ item }">
-            {{ formatDate(item.created_at) }}
+            <timeago :datetime="item.created_at"></timeago>
           </template>
           <template #[`item.actions`]="{ item }">
-            <v-icon v-if="item" class="mr-2">mdi-information</v-icon>
-            <v-icon>mdi-account-lock</v-icon>
+            <v-icon class="mr-2">mdi-information</v-icon>
+            <v-icon
+              v-if="item.admin"
+              @click="setAdmin(item.email, !item.admin)"
+              >mdi-account-key</v-icon
+            >
+            <v-icon v-else @click="setAdmin(item.email, !item.admin)"
+              >mdi-account-lock</v-icon
+            >
           </template>
         </v-data-table></v-col
       >
@@ -108,10 +126,17 @@
 </template>
 <script setup>
 import { ref, onMounted } from "vue";
+import router from "@/router";
 import userService from "@/services/userService";
 import BaseButton from "@/components/Form/BaseButton.vue";
 import Toast from "@/components/Toast.vue";
+import TimeAgo from "javascript-time-ago";
+import en from "javascript-time-ago/locale/en";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/store/UserStore";
 
+TimeAgo.addLocale(en);
+const timeAgo = ref(new TimeAgo("en-US"));
 const vouchers = ref([]);
 const pendingVouchers = ref([]);
 const approveAllCount = ref(0);
@@ -119,77 +144,77 @@ const userInfo = ref(null);
 const users = ref([]);
 const toast = ref(null);
 const loading = ref(false);
+const store = useUserStore();
+const { isAdmin } = storeToRefs(store);
 
 const pendingVouchersHeaders = ref([
   { title: "No", key: "id" },
   { title: "User", key: "name", sortable: false },
   { title: "Created at", key: "created_at" },
   { title: "Reason for Voucher", key: "reason", sortable: false },
-  { title: "VMs", key: "vms" },
+  { title: "Balance", key: "balance" },
   { title: "Voucher", key: "voucher" },
   { title: "Actions", key: "actions", sortable: false },
 ]);
 
 const usersHeaders = ref([
   { title: "No", key: "id", sortable: false },
-  { title: "Name", key: "name", sortable: false },
-  { title: "VMs", key: "vms", sortable: false },
-  { title: "IPs", key: "public_ips", sortable: false },
+  { title: "Name", key: "first_name", sortable: false },
+  { title: "VMs", key: "count.vms", sortable: false },
+  { title: "IPs", key: "count.ips", sortable: false },
   { title: "Actions", key: "actions", sortable: false },
 ]);
 
-function getVouchers() {
+async function getVouchers() {
   loading.value = true;
-  userService
-    .getVouchers()
-    .then((response) => {
-      const { data } = response.data;
-      approveAllCount.value = 0;
 
-      let updateDataPromise = data.map(function (voucher) {
-        return new Promise(function (resolve) {
-          setTimeout(() => {
-            if (voucher.approved && voucher.rejected) {
-              approveAllCount.value++;
-            }
+  try {
+    const response = await userService.getVouchers();
+    const { data } = response.data;
 
-            if (users.value && voucher.user_id) {
-              userInfo.value = users.value.find(
-                (user) => user.ID === voucher.user_id
-              );
+    approveAllCount.value = 0;
 
-              if (voucher.user_id === userInfo.value.ID) {
-                Object.assign(voucher, {
-                  email: userInfo.value.email,
-                  name: userInfo.value.first_name,
-                });
-              }
-            }
-            resolve();
-          }, 10);
-        });
-      });
+    await updateVouchers(data);
 
-      Promise.all(updateDataPromise).then(function () {
-        vouchers.value = data.filter(
-          (voucher) => voucher.approved || voucher.rejected
-        );
-        pendingVouchers.value = data.filter(
-          (voucher) => !voucher.approved && !voucher.rejected
-        );
-      });
-    })
-    .catch((response) => {
-      const { err } = response.response.data;
-      toast.value.toast(err, "#FF5252");
-    })
-    .finally(() => {
-      loading.value = false;
-    });
+    vouchers.value = data.filter(
+      (voucher) => voucher.approved || voucher.rejected
+    );
+    pendingVouchers.value = data.filter(
+      (voucher) => !voucher.approved && !voucher.rejected
+    );
+  } catch (error) {
+    const { err } = error.response.data;
+    toast.value.toast(err, "#FF5252");
+  } finally {
+    loading.value = false;
+  }
 }
 
-function formatDate(date) {
-  return new Date(date).toLocaleString();
+async function updateVouchers(data) {
+  const updatePromises = data.map(async (voucher) => {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    if (voucher.approved && voucher.rejected) {
+      approveAllCount.value++;
+    }
+
+    if (users.value && voucher.user_id) {
+      userInfo.value = users.value.find((user) => user.ID === voucher.user_id);
+
+      if (userInfo.value && voucher.user_id === userInfo.value.ID) {
+        Object.assign(voucher, {
+          email: userInfo.value.email,
+          name: userInfo.value.first_name,
+        });
+      }
+    }
+  });
+
+  await Promise.all(updatePromises);
+}
+
+function convertDate(date) {
+  return new Date(date);
 }
 
 async function getUsers() {
@@ -239,9 +264,27 @@ async function approveAllVouchers() {
     });
 }
 
+async function setAdmin(email, admin) {
+  await userService
+    .setAdmin(email, admin)
+    .then(async (response) => {
+      toast.value.toast(response.data.msg, "#388E3C");
+      if (!isAdmin) {
+        router.push({
+          name: "Home",
+        });
+      }
+      await getUsers();
+    })
+    .catch((response) => {
+      const { err } = response.response.data;
+      toast.value.toast(err, "#FF5252");
+    });
+}
+
 onMounted(async () => {
-  await getVouchers();
   await getUsers();
+  await getVouchers();
 });
 </script>
 <style>
