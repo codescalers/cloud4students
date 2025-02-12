@@ -120,8 +120,7 @@ func (d *DB) GetAllSuccessfulK8s(userID string) ([]K8sCluster, error) {
 // DeleteK8s deletes a k8s cluster
 func (d *DB) DeleteK8s(id int) error {
 	var k8s K8sCluster
-	err := d.db.First(&k8s, id).Error
-	if err != nil {
+	if err := d.db.First(&k8s, id).Error; err != nil {
 		return err
 	}
 	return d.db.Select("Master", "Workers").Delete(&k8s).Error

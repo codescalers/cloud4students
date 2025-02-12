@@ -117,48 +117,6 @@ const docTemplate = `{
             }
         },
         "/deployments": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "List all users' deployments",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin"
-                ],
-                "summary": "List all users' deployments",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/app.ListDeploymentsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {}
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {}
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {}
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {}
-                    }
-                }
-            },
             "delete": {
                 "security": [
                     {
@@ -224,6 +182,108 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.DeploymentsCount"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {}
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {}
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {}
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {}
+                    }
+                }
+            }
+        },
+        "/deployments/k8s/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a kubernetes cluster",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Deletes a kubernetes cluster",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Kubernetes cluster ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {}
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {}
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {}
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {}
+                    }
+                }
+            }
+        },
+        "/deployments/vm/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a virtual machine",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Deletes a virtual machine",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Virtual machine ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {}
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1528,7 +1588,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.User"
+                                "$ref": "#/definitions/app.UserResponse"
                             }
                         }
                     },
@@ -2872,14 +2932,9 @@ const docTemplate = `{
         "app.ApplyForVoucherInput": {
             "type": "object",
             "required": [
-                "balance",
                 "reason"
             ],
             "properties": {
-                "balance": {
-                    "type": "integer",
-                    "minimum": 0
-                },
                 "reason": {
                     "type": "string"
                 }
@@ -3021,23 +3076,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/app.WorkerInput"
-                    }
-                }
-            }
-        },
-        "app.ListDeploymentsResponse": {
-            "type": "object",
-            "properties": {
-                "k8s": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.K8sCluster"
-                    }
-                },
-                "vms": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.VM"
                     }
                 }
             }
@@ -3212,6 +3250,78 @@ const docTemplate = `{
             "properties": {
                 "approved": {
                     "type": "boolean"
+                }
+            }
+        },
+        "app.UserResponse": {
+            "type": "object",
+            "required": [
+                "email",
+                "first_name",
+                "hashed_password",
+                "last_name"
+            ],
+            "properties": {
+                "admin": {
+                    "description": "checks if user type is admin",
+                    "type": "boolean"
+                },
+                "balance": {
+                    "type": "number"
+                },
+                "code": {
+                    "type": "integer"
+                },
+                "count": {
+                    "$ref": "#/definitions/models.DeploymentsCount"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "first_name": {
+                    "type": "string"
+                },
+                "hashed_password": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "k8s": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.K8sCluster"
+                    }
+                },
+                "last_name": {
+                    "type": "string"
+                },
+                "ssh_key": {
+                    "type": "string"
+                },
+                "stripe_customer_id": {
+                    "type": "string"
+                },
+                "stripe_default_payment_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "verified": {
+                    "type": "boolean"
+                },
+                "vms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VM"
+                    }
+                },
+                "voucher_balance": {
+                    "type": "number"
                 }
             }
         },
