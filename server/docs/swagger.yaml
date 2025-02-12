@@ -35,13 +35,9 @@ definitions:
     type: object
   app.ApplyForVoucherInput:
     properties:
-      balance:
-        minimum: 0
-        type: integer
       reason:
         type: string
     required:
-    - balance
     - reason
     type: object
   app.ChangePasswordInput:
@@ -137,17 +133,6 @@ definitions:
       workers:
         items:
           $ref: '#/definitions/app.WorkerInput'
-        type: array
-    type: object
-  app.ListDeploymentsResponse:
-    properties:
-      k8s:
-        items:
-          $ref: '#/definitions/models.K8sCluster'
-        type: array
-      vms:
-        items:
-          $ref: '#/definitions/models.VM'
         type: array
     type: object
   app.PayInvoiceInput:
@@ -264,6 +249,55 @@ definitions:
         type: boolean
     required:
     - approved
+    type: object
+  app.UserResponse:
+    properties:
+      admin:
+        description: checks if user type is admin
+        type: boolean
+      balance:
+        type: number
+      code:
+        type: integer
+      count:
+        $ref: '#/definitions/models.DeploymentsCount'
+      email:
+        type: string
+      first_name:
+        type: string
+      hashed_password:
+        items:
+          type: integer
+        type: array
+      id:
+        type: string
+      k8s:
+        items:
+          $ref: '#/definitions/models.K8sCluster'
+        type: array
+      last_name:
+        type: string
+      ssh_key:
+        type: string
+      stripe_customer_id:
+        type: string
+      stripe_default_payment_id:
+        type: string
+      updated_at:
+        type: string
+      verified:
+        type: boolean
+      vms:
+        items:
+          $ref: '#/definitions/models.VM'
+        type: array
+      voucher_balance:
+        type: number
+    required:
+    - email
+    - first_name
+    - hashed_password
+    - last_name
     type: object
   app.VerifyCodeInput:
     properties:
@@ -735,34 +769,6 @@ paths:
       summary: Deletes all users' deployments
       tags:
       - Admin
-    get:
-      consumes:
-      - application/json
-      description: List all users' deployments
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/app.ListDeploymentsResponse'
-        "400":
-          description: Bad Request
-          schema: {}
-        "401":
-          description: Unauthorized
-          schema: {}
-        "404":
-          description: Not Found
-          schema: {}
-        "500":
-          description: Internal Server Error
-          schema: {}
-      security:
-      - BearerAuth: []
-      summary: List all users' deployments
-      tags:
-      - Admin
   /deployments/count:
     get:
       consumes:
@@ -790,6 +796,74 @@ paths:
       security:
       - BearerAuth: []
       summary: Get users' deployments count
+      tags:
+      - Admin
+  /deployments/k8s/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a kubernetes cluster
+      parameters:
+      - description: Kubernetes cluster ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+        "400":
+          description: Bad Request
+          schema: {}
+        "401":
+          description: Unauthorized
+          schema: {}
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - BearerAuth: []
+      summary: Deletes a kubernetes cluster
+      tags:
+      - Admin
+  /deployments/vm/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a virtual machine
+      parameters:
+      - description: Virtual machine ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+        "400":
+          description: Bad Request
+          schema: {}
+        "401":
+          description: Unauthorized
+          schema: {}
+        "404":
+          description: Not Found
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - BearerAuth: []
+      summary: Deletes a virtual machine
       tags:
       - Admin
   /email:
@@ -1592,7 +1666,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.User'
+              $ref: '#/definitions/app.UserResponse'
             type: array
         "400":
           description: Bad Request

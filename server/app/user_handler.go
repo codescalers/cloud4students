@@ -65,8 +65,7 @@ type EmailInput struct {
 
 // ApplyForVoucherInput struct for user to apply for voucher
 type ApplyForVoucherInput struct {
-	Balance uint64 `json:"balance" binding:"required" validate:"min=0"`
-	Reason  string `json:"reason" binding:"required" validate:"nonzero"`
+	Reason string `json:"reason" binding:"required" validate:"nonzero"`
 }
 
 // AddVoucherInput struct for voucher applied by user
@@ -711,7 +710,7 @@ func (a *App) ApplyForVoucherHandler(req *http.Request) (interface{}, Response) 
 	voucher := models.Voucher{
 		Voucher: v,
 		UserID:  userID,
-		Balance: input.Balance,
+		Balance: a.config.VoucherBalance,
 		Reason:  input.Reason,
 	}
 
