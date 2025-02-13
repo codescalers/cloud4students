@@ -77,7 +77,8 @@ func SetUp(t testing.TB) *App {
 		"large_vm": 30
 	},
 	"stripe_secret": "sk_test",
-	"voucher_balance": 10
+	"voucher_balance": 10,
+	"invoice_logo": "server/internal/img/logo.png"
 }
 	`, dbPath)
 
