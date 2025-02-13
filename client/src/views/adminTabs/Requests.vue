@@ -133,12 +133,15 @@ import en from "javascript-time-ago/locale/en";
 import { storeToRefs } from "pinia";
 import { useUserStore } from "@/store/UserStore";
 
+defineProps({
+  pendingVouchers: {
+    type: Array,
+  },
+});
+const emit = defineEmits("updateVouchers");
+
 TimeAgo.addLocale(en);
 const timeAgo = ref(new TimeAgo("en-US"));
-const vouchers = ref([]);
-const pendingVouchers = ref([]);
-const approveAllCount = ref(0);
-const userInfo = ref(null);
 const users = ref([]);
 const toast = ref(null);
 const loading = ref(false);
@@ -162,54 +165,6 @@ const usersHeaders = ref([
   { title: "IPs", key: "count.ips", sortable: false },
   { title: "Actions", key: "actions", sortable: false },
 ]);
-
-async function getVouchers() {
-  loading.value = true;
-
-  try {
-    const response = await userService.getVouchers();
-    const { data } = response.data;
-
-    approveAllCount.value = 0;
-
-    await updateVouchers(data);
-
-    vouchers.value = data.filter(
-      (voucher) => voucher.approved || voucher.rejected
-    );
-    pendingVouchers.value = data.filter(
-      (voucher) => !voucher.approved && !voucher.rejected
-    );
-  } catch (error) {
-    const { err } = error.response.data;
-    toast.value.toast(err, "#FF5252");
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function updateVouchers(data) {
-  const updatePromises = data.map(async (voucher) => {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-
-    if (voucher.approved && voucher.rejected) {
-      approveAllCount.value++;
-    }
-
-    if (users.value && voucher.user_id) {
-      userInfo.value = users.value.find((user) => user.ID === voucher.user_id);
-
-      if (userInfo.value && voucher.user_id === userInfo.value.ID) {
-        Object.assign(voucher, {
-          email: userInfo.value.email,
-          name: userInfo.value.first_name,
-        });
-      }
-    }
-  });
-
-  await Promise.all(updatePromises);
-}
 
 function convertDate(date) {
   return new Date(date);
@@ -241,12 +196,12 @@ async function approveVoucher(id, approved) {
     .approveVoucher(id, approved)
     .then(async (response) => {
       toast.value.toast(response.data.msg, "#388E3C");
-      await getVouchers();
     })
     .catch((response) => {
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
-    });
+    })
+    .finally(() => emit("updateData"));
 }
 
 async function approveAllVouchers() {
@@ -254,12 +209,12 @@ async function approveAllVouchers() {
     .approveAllVouchers()
     .then(async (response) => {
       toast.value.toast(response.data.msg, "#388E3C");
-      await getVouchers();
     })
     .catch((response) => {
       const { err } = response.response.data;
       toast.value.toast(err, "#FF5252");
-    });
+    })
+    .finally(() => emit("updateData"));
 }
 
 async function setAdmin(email, admin) {
@@ -280,7 +235,6 @@ async function setAdmin(email, admin) {
 
 onMounted(async () => {
   await getUsers();
-  await getVouchers();
 });
 </script>
 <style>
