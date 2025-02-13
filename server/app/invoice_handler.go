@@ -163,7 +163,7 @@ func (a *App) DownloadInvoiceHandler(req *http.Request) (interface{}, Response) 
 			return nil, InternalServerError(errors.New(internalServerErrorMsg))
 		}
 
-		pdfContent, err := internal.CreateInvoicePDF(invoice, user)
+		pdfContent, err := internal.CreateInvoicePDF(invoice, user, a.config.InvoiceLogoPath)
 		if err != nil {
 			log.Error().Err(err).Send()
 			return nil, InternalServerError(errors.New(internalServerErrorMsg))
@@ -419,7 +419,7 @@ func (a *App) createInvoice(user models.User, now time.Time) error {
 		}
 
 		// Creating pdf for invoice
-		pdfContent, err := internal.CreateInvoicePDF(in, user)
+		pdfContent, err := internal.CreateInvoicePDF(in, user, a.config.InvoiceLogoPath)
 		if err != nil {
 			return err
 		}

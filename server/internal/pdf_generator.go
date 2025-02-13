@@ -17,7 +17,6 @@ const (
 	startX float64 = 25
 	startY float64 = 30
 
-	logoPath       = "internal/img/logo.png"
 	fontPath       = "internal/fonts/Arial.ttf"
 	boldFontPath   = "internal/fonts/Arial-Bold.ttf"
 	italicFontPath = "internal/fonts/Arial-Italic.ttf"
@@ -27,26 +26,28 @@ type InvoicePDF struct {
 	invoice models.Invoice
 	user    models.User
 
-	pdf    *gopdf.GoPdf
-	config gopdf.Config
-	startX float64
-	startY float64
+	pdf      *gopdf.GoPdf
+	config   gopdf.Config
+	startX   float64
+	startY   float64
+	logoPath string
 }
 
 func CreateInvoicePDF(
-	invoice models.Invoice, user models.User,
+	invoice models.Invoice, user models.User, logoPath string,
 ) ([]byte, error) {
 	pdf := gopdf.GoPdf{}
 	config := gopdf.Config{PageSize: *gopdf.PageSizeA4}
 	pdf.Start(config)
 
 	invoicePDF := InvoicePDF{
-		invoice: invoice,
-		user:    user,
-		pdf:     &pdf,
-		config:  config,
-		startX:  startX,
-		startY:  startY,
+		invoice:  invoice,
+		user:     user,
+		pdf:      &pdf,
+		config:   config,
+		startX:   startX,
+		startY:   startY,
+		logoPath: logoPath,
 	}
 
 	if err := invoicePDF.setFonts(); err != nil {
@@ -147,7 +148,7 @@ func (in *InvoicePDF) draw() error {
 }
 
 func (in *InvoicePDF) setLogo() error {
-	return in.pdf.Image(logoPath, in.startX, in.startY, nil)
+	return in.pdf.Image(in.logoPath, in.startX, in.startY, nil)
 }
 
 func (in *InvoicePDF) title() error {

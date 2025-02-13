@@ -25,6 +25,7 @@ type Configuration struct {
 	Currency                  string      `json:"currency" validate:"nonzero"`
 	StripeSecret              string      `json:"stripe_secret" validate:"nonzero"`
 	VoucherBalance            uint64      `json:"voucher_balance" validate:"nonzero"`
+	InvoiceLogoPath           string      `json:"invoice_logo" validate:"nonzero"`
 }
 
 // Server struct to hold server's information
