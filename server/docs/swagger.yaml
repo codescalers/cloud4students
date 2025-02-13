@@ -495,15 +495,20 @@ definitions:
         type: integer
       msg:
         type: string
+      notified:
+        type: boolean
       seen:
         type: boolean
       type:
-        description: to allow redirecting from notifications to the right pages
+        description: |-
+          to allow redirecting from notifications to the right pages
+          for example if the type is `vm` it will be redirected to the vm page
         type: string
       user_id:
         type: string
     required:
     - msg
+    - notified
     - seen
     - type
     - user_id
@@ -1370,6 +1375,30 @@ paths:
       summary: Lists user's notifications
       tags:
       - Notification
+    put:
+      consumes:
+      - application/json
+      description: Set user's notifications as seen
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+        "400":
+          description: Bad Request
+          schema: {}
+        "401":
+          description: Unauthorized
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - BearerAuth: []
+      summary: Set user's notifications as seen
+      tags:
+      - Notification
   /notification/{id}:
     put:
       consumes:
@@ -1399,6 +1428,31 @@ paths:
       security:
       - BearerAuth: []
       summary: Set user's notifications as seen
+      tags:
+      - Notification
+  /notification/stream:
+    get:
+      consumes:
+      - application/json
+      description: Stream user's notifications
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Notification'
+            type: array
+        "401":
+          description: Unauthorized
+          schema: {}
+        "500":
+          description: Internal Server Error
+          schema: {}
+      security:
+      - BearerAuth: []
+      summary: Stream user's notifications
       tags:
       - Notification
   /region:

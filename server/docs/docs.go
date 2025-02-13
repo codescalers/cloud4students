@@ -1068,6 +1068,81 @@ const docTemplate = `{
                         "schema": {}
                     }
                 }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Set user's notifications as seen",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Set user's notifications as seen",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {}
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {}
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {}
+                    }
+                }
+            }
+        },
+        "/notification/stream": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Stream user's notifications",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Stream user's notifications",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Notification"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {}
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {}
+                    }
+                }
             }
         },
         "/notification/{id}": {
@@ -3389,6 +3464,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "msg",
+                "notified",
                 "seen",
                 "type",
                 "user_id"
@@ -3400,11 +3476,14 @@ const docTemplate = `{
                 "msg": {
                     "type": "string"
                 },
+                "notified": {
+                    "type": "boolean"
+                },
                 "seen": {
                     "type": "boolean"
                 },
                 "type": {
-                    "description": "to allow redirecting from notifications to the right pages",
+                    "description": "to allow redirecting from notifications to the right pages\nfor example if the type is ` + "`" + `vm` + "`" + ` it will be redirected to the vm page",
                     "type": "string"
                 },
                 "user_id": {
