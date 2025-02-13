@@ -88,7 +88,8 @@ func (d *DB) GetK8s(id int) (K8sCluster, error) {
 // GetAllK8s gets all k8s clusters
 func (d *DB) GetAllK8s(userID string) ([]K8sCluster, error) {
 	var k8sClusters []K8sCluster
-	err := d.db.Find(&k8sClusters, "user_id = ?", userID).Error
+	err := d.db.Find(&k8sClusters, "user_id = ?", userID).
+		Where("state != ?", StateFailed).Error
 	if err != nil {
 		return nil, err
 	}
