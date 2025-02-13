@@ -144,7 +144,7 @@ func (a *App) SignUpHandler(req *http.Request) (interface{}, Response) {
 	// send verification code if user is not verified or not exist
 	code := internal.GenerateRandomCode()
 	subject, body := internal.SignUpMailContent(code, a.config.MailSender.Timeout, fmt.Sprintf("%s %s", signUp.FirstName, signUp.LastName), a.config.Server.Host)
-	err = internal.SendMail(a.config.MailSender.Email, a.config.MailSender.SendGridKey, signUp.Email, subject, body)
+	err = a.mailer.SendMail(a.config.MailSender.Email, signUp.Email, subject, body)
 	if err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
@@ -244,7 +244,7 @@ func (a *App) VerifySignUpCodeHandler(req *http.Request) (interface{}, Response)
 	middlewares.UserCreations.WithLabelValues(user.ID.String(), user.Email).Inc()
 
 	subject, body := internal.WelcomeMailContent(user.Name(), a.config.Server.Host)
-	err = internal.SendMail(a.config.MailSender.Email, a.config.MailSender.SendGridKey, user.Email, subject, body)
+	err = a.mailer.SendMail(a.config.MailSender.Email, user.Email, subject, body)
 	if err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
@@ -404,7 +404,7 @@ func (a *App) ForgotPasswordHandler(req *http.Request) (interface{}, Response) {
 	// send verification code
 	code := internal.GenerateRandomCode()
 	subject, body := internal.ResetPasswordMailContent(code, a.config.MailSender.Timeout, user.Name(), a.config.Server.Host)
-	err = internal.SendMail(a.config.MailSender.Email, a.config.MailSender.SendGridKey, email.Email, subject, body)
+	err = a.mailer.SendMail(a.config.MailSender.Email, email.Email, subject, body)
 
 	if err != nil {
 		log.Error().Err(err).Send()
@@ -839,7 +839,6 @@ func (a *App) ActivateVoucherHandler(req *http.Request) (interface{}, Response) 
 // @Failure 500 {object} Response
 // @Router /user/charge_balance [put]
 func (a *App) ChargeBalance(req *http.Request) (interface{}, Response) {
-
 	userID := req.Context().Value(middlewares.UserIDKey("UserID")).(string)
 
 	var input ChargeBalance
@@ -918,6 +917,7 @@ func (a *App) ChargeBalance(req *http.Request) (interface{}, Response) {
 // @Failure 500 {object} Response
 // @Router /user [delete]
 func (a *App) DeleteUserHandler(req *http.Request) (interface{}, Response) {
+	// TODO: delete customer from stripe
 	userID := req.Context().Value(middlewares.UserIDKey("UserID")).(string)
 	user, err := a.db.GetUserByID(userID)
 	if err == gorm.ErrRecordNotFound {
@@ -929,7 +929,7 @@ func (a *App) DeleteUserHandler(req *http.Request) (interface{}, Response) {
 	}
 
 	// 1. Create last invoice to pay if there were active deployments
-	if err := a.createInvoice(userID, time.Now()); err != nil {
+	if err := a.createInvoice(user, time.Now()); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}

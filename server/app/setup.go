@@ -106,6 +106,7 @@ func SetUp(t testing.TB) *App {
 		db:       db,
 		redis:    streams.RedisClient{},
 		deployer: newDeployer,
+		mailer:   internal.NewMailer(configuration.MailSender.SendGridKey),
 	}
 
 	return app

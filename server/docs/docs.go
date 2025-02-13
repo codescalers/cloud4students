@@ -447,6 +447,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/invoice/download/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Downloads user's invoice by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invoice"
+                ],
+                "summary": "Downloads user's invoice by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invoice ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {}
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {}
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {}
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {}
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {}
+                    }
+                }
+            }
+        },
         "/invoice/pay/{id}": {
             "put": {
                 "security": [
@@ -3202,8 +3253,14 @@ const docTemplate = `{
                 "cost": {
                     "type": "number"
                 },
+                "deployment_created_at": {
+                    "type": "string"
+                },
                 "deployment_id": {
                     "type": "integer"
+                },
+                "deployment_name": {
+                    "type": "string"
                 },
                 "has_public_ip": {
                     "type": "boolean"
@@ -3251,10 +3308,16 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.DeploymentItem"
                     }
                 },
+                "file_data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "id": {
                     "type": "integer"
                 },
-                "last_remainder_at": {
+                "last_reminder_at": {
                     "type": "string"
                 },
                 "paid": {
