@@ -4,18 +4,22 @@
   </component>
 </template>
 
-<script>
+<script setup>
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 
-export default {
-  setup() {
-    const route = useRoute();
-    const layout = computed(() => {
-      const NoNavbar_layout = "No-Navbar";
-      return (route.meta.layout || NoNavbar_layout) + "-Layout";
-    });
-    return { layout };
-  },
-};
+const route = useRoute();
+
+const layout = computed(() => {
+  const routeLayout = route.meta.layout;
+  return routeLayout === "Default" ? "Default-Layout" : "No-Navbar-Layout";
+});
 </script>
+<style>
+body {
+  background-color: #212121;
+}
+.v-container--fluid {
+  max-width: 100% !important;
+}
+</style>

@@ -1,52 +1,153 @@
 import axios from "axios";
+import router from "@/router";
 
 const baseClient = () =>
   axios.create({
     baseURL: window.configs.vite_app_endpoint,
   });
 
-const authClient = () =>
-  axios.create({
+const authClient = () => {
+  const client = axios.create({
     baseURL: window.configs.vite_app_endpoint,
     headers: {
       Authorization: "Bearer " + localStorage.getItem("token"),
     },
   });
 
+  client.interceptors.response.use(
+    (response) => {
+      return response;
+    },
+    (error) => {
+      if (error.response && error.response.status === 401) {
+        console.error("Unauthorized access - redirecting to home");
+        localStorage.removeItem("token");
+        router.push("/");
+      }
+      return Promise.reject(error);
+    }
+  );
+  return client;
+};
+
+let refreshInterval;
+
+const startTokenRefreshInterval = function (timeout) {
+  clearInterval(refreshInterval);
+
+  refreshInterval = setInterval(() => {
+    this.refresh_token();
+  }, (timeout - 5) * 1000);
+};
+
 export default {
   async refresh_token() {
-    await authClient()
+    return await authClient()
       .post("/user/refresh_token")
       .then((response) => {
-        let token = response.data.data.refresh_token;
-        localStorage.setItem("token", token);
+        const { refresh_token } = response.data.data;
+        localStorage.setItem("token", refresh_token);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("Failed to refresh token", error);
         localStorage.removeItem("token");
+        clearInterval(refreshInterval);
       });
+  },
+
+  async SSE() {
+    return await authClient().get("/notification/stream", {
+      responseType: "stream",
+    });
   },
 
   // user
   async getUser() {
-    await this.refresh_token();
     return await authClient().get("/user");
   },
 
+  async signUp(first_name, last_name, email, password, confirm_password) {
+    return await baseClient().post("/user/signup", {
+      first_name,
+      last_name,
+      email,
+      password,
+      confirm_password,
+    });
+  },
+
+  async signIn(email, password) {
+    return await baseClient()
+      .post("/user/signin", {
+        email,
+        password,
+      })
+      .then((res) => {
+        const { timeout } = res.data.data;
+        startTokenRefreshInterval.call(this, timeout);
+        return res;
+      });
+  },
+
+  logout() {
+    localStorage.removeItem("token");
+    clearInterval(refreshInterval);
+    router.push("/");
+  },
+
+  async forgotPassword(email) {
+    return await baseClient().post("/user/forgot_password", { email });
+  },
+
+  async signUpVerification(email, code) {
+    return await baseClient().post("/user/signup/verify_email", {
+      email,
+      code,
+    });
+  },
+
+  async applyVoucher(balance, reason) {
+    return await authClient().post("/user/apply_voucher", { balance, reason });
+  },
+
   async activateVoucher(voucher) {
-    await this.refresh_token();
     return await authClient().put("/user/activate_voucher", { voucher });
   },
 
-  async updateUser(name, ssh_key) {
-    await this.refresh_token();
+  async forgetPasswordVerification(email, code) {
+    return await baseClient().post("/user/forget_password/verify_email", {
+      email,
+      code,
+    });
+  },
+
+  async updateUser(first_name, ssh_key) {
     return await authClient().put("/user", {
-      name,
+      first_name,
       ssh_key,
     });
   },
 
+  async addCard(token_id, token_type) {
+    return await authClient().post("/user/card", {
+      token_id,
+      token_type,
+    });
+  },
+
+  async getCards() {
+    return await authClient().get("/user/card");
+  },
+
+  async setDefaultCard(payment_method_id) {
+    return await authClient().put("/user/card/default", { payment_method_id });
+  },
+
+  async deleteCard(id) {
+    return await authClient().delete(`/user/card/${id}`);
+  },
+
   async changePassword(email, password, confirm_password) {
-    await this.refresh_token();
     return await authClient().put("/user/change_password", {
       email,
       password,
@@ -54,59 +155,87 @@ export default {
     });
   },
 
-  async newVoucher(vms, public_ips, reason) {
-    await this.refresh_token();
+  async newVoucher(balance, reason) {
     return await authClient().post("/user/apply_voucher", {
-      vms,
-      public_ips,
+      balance,
       reason,
     });
   },
 
+  async chargeBalance(amount, payment_method_id) {
+    return await authClient().put("/user/charge_balance", {
+      amount,
+      payment_method_id,
+    });
+  },
+
   async getQuota() {
-    await this.refresh_token();
     return await authClient().get("/quota");
+  },
+
+  async deleteAccount() {
+    return await authClient().delete("/user");
+  },
+
+  // Invoices
+  async getInvoices() {
+    return await authClient().get("/invoice");
+  },
+
+  async payInvoice(id) {
+    return await authClient().put("/invoice/pay", { id });
+  },
+
+  async getInvoice(id) {
+    return await authClient().get("/invoice", { id });
+  },
+
+  async downloadInvoice(id) {
+    return await authClient().get(`/invoice/download/${id}`, {
+      responseType: "blob",
+    });
   },
 
   // VM
   async getVms() {
-    await this.refresh_token();
     return await authClient().get("/vm");
   },
 
   async validateVMName(name) {
-    await this.refresh_token();
     return await authClient().get(`/vm/validate/${name}`);
   },
 
-  async deployVm(name, resources, checked) {
-    await this.refresh_token();
-    return await authClient().post("/vm", { name, resources, public: checked });
+  async getRegions() {
+    return await authClient().get("/region");
+  },
+
+  async deployVm(name, region, resources, isPublic) {
+    return await authClient().post("/vm", {
+      name,
+      region,
+      resources,
+      public: isPublic,
+    });
   },
 
   async deleteVm(id) {
-    await this.refresh_token();
     return await authClient().delete(`/vm/${id}`);
   },
 
   async deleteAllVms() {
-    await this.refresh_token();
     return await authClient().delete("/vm");
   },
 
   // K8s
   async getK8s() {
-    await this.refresh_token();
     return await authClient().get("/k8s");
   },
 
   async validateK8sName(name) {
-    await this.refresh_token();
     return await authClient().get(`/k8s/validate/${name}`);
   },
 
   async deployK8s(master_name, resources, workers, checked) {
-    await this.refresh_token();
     return await authClient().post("/k8s", {
       master_name,
       resources,
@@ -116,130 +245,88 @@ export default {
   },
 
   async deleteK8s(id) {
-    await this.refresh_token();
     return await authClient().delete(`/k8s/${id}`);
   },
 
   async deleteAllK8s() {
-    await this.refresh_token();
     return await authClient().delete("/k8s");
   },
 
   // Users
   async getUsers() {
-    await this.refresh_token();
     return await authClient().get("/user/all");
   },
 
   // Deployments
   async getDeploymentsCount() {
-    await this.refresh_token();
     return await authClient().get("/deployment/count");
   },
 
   // Vouchers
   async getVouchers() {
-    await this.refresh_token();
     return await authClient().get("/voucher");
   },
 
   async approveVoucher(id, approved) {
-    await this.refresh_token();
     return await authClient().put(`/voucher/${id}`, { approved });
   },
 
   async approveAllVouchers() {
-    await this.refresh_token();
     return await authClient().put("/voucher");
   },
 
   async generateVoucher(length, vms, public_ips) {
-    await this.refresh_token();
     return await authClient().post("/voucher", { length, vms, public_ips });
+  },
+
+  async getAuditEvents() {
+    return await authClient().get("/user/event");
+  },
+
+  async getAuditLogs() {
+    return await authClient().get("/user/log");
   },
 
   // balance
   async getBalance() {
-    await this.refresh_token();
     return await authClient().get("/balance");
   },
 
   // announcement
   async sendAnnouncement(subject, announcement) {
-    await this.refresh_token();
     return await authClient().post("/announcement", { subject, announcement });
   },
 
   // email
   async sendEmail(subject, body, email) {
-    await this.refresh_token();
     return await authClient().post("/email", { subject, body, email });
   },
 
   async setAdmin(email, admin) {
-    await this.refresh_token();
     return await authClient().put("/set_admin", { email, admin });
   },
 
   // notifications
   async getNotifications() {
-    await this.refresh_token();
     return await authClient().get("/notification");
   },
 
   async seenNotification(id) {
-    await this.refresh_token();
     return await authClient().put(`/notification/${id}`);
   },
 
   // maintenance
   async maintenance() {
-    await baseClient()
-      .get("/maintenance")
-      .then((response) => {
-        const { data } = response.data;
-        localStorage.setItem("maintenance", data.active);
-      })
-      .catch((response) => {
-        const { err } = response.response.data;
-        console.log(err);
-      });
+    return await baseClient().get("/maintenance");
   },
 
   // getting nextlaunch value
-  async nextlaunch() {
-    return await baseClient()
-      .get("/nextlaunch")
-      .then((response) => {
-        const { data } = response.data;
-        localStorage.setItem("nextlaunch", data.launched);
-        localStorage.setItem("nextlaunchadmin", data.launched);
-      })
-      .catch((response) => {
-        const { err } = response.response.data;
-        console.log(err);
-      });
-  },
-
-  // handler function of nextlaunch
-  async handleNextLaunch(){
-    await this.getUser()
-      .then((response) => {
-        const { user } = response.data.data;
-        const isAdmin = user.admin;
-        if (isAdmin) {
-          localStorage.setItem("nextlaunch", "true");
-        }
-      })
-			.catch((response) => {
-        const { err } = response.response.data;
-        console.log(err);
-      });
+  async nextLaunch() {
+    return await baseClient().get("/nextlaunch");
   },
 
   // setting next launch value
   async setNextLaunch(value) {
-    await this.refresh_token();
     return await authClient().put("/nextlaunch", {
       launched: value,
     });

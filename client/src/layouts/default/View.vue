@@ -4,16 +4,12 @@
   </v-main>
 </template>
 
-<script setup>
-//
-</script>
-
 <style>
 .primary {
   color: #217dbb;
 }
 .bg-primary {
-  background-color: #217dbb;
+  background-color: #212121;
 }
 
 .text-subtitle-1 {

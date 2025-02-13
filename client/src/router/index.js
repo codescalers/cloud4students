@@ -1,21 +1,25 @@
 // Composables
 import { createRouter, createWebHistory } from "vue-router";
-import Home from "@/views/Home.vue";
-import About from "@/views/About.vue";
+import { useUserStore } from "@/store/UserStore";
+import Account from "@/views/Account.vue";
 import VM from "@/views/VM.vue";
-import K8s from "@/views/K8s.vue";
-import Profile from "@/views/Profile.vue";
 import Admin from "@/views/Admin.vue";
 import NewPassword from "@/views/Newpassword.vue";
-import userService from "@/services/userService.js";
+import ProfileTab from "@/views/tabs/Profile.vue";
+import PaymentsTab from "@/views/tabs/Payments.vue";
+import Invoices from "@/views/tabs/Invoices.vue";
+import ChangePassword from "@/views/tabs/ChangePassword.vue";
+import AuditLogs from "@/views/tabs/AuditLogs.vue";
+import DeleteAccount from "@/views/tabs/DeleteAccount.vue";
+import Deploy from "@/views/Deploy.vue";
+import Home from "@/views/HomeWrapper.vue";
 
 const routes = [
   {
     path: "/",
-    name: "Landing",
-    component: () => import("@/views/LandingPage.vue"),
+    name: "Home",
+    component: Home,
     meta: {
-      requiredAuth: false,
       layout: "Default",
     },
   },
@@ -24,8 +28,7 @@ const routes = [
     name: "Login",
     component: () => import("@/views/Login.vue"),
     meta: {
-      requiredAuth: false,
-      layout: "Default",
+      layout: "NoNavbar",
     },
   },
   {
@@ -33,8 +36,7 @@ const routes = [
     name: "Signup",
     component: () => import("@/views/Signup.vue"),
     meta: {
-      requiredAuth: false,
-      layout: "Default",
+      layout: "NoNavbar",
     },
   },
   {
@@ -42,8 +44,7 @@ const routes = [
     name: "ForgetPassword",
     component: () => import("@/views/Forgetpassword.vue"),
     meta: {
-      requiredAuth: false,
-      layout: "Default",
+      layout: "NoNavbar",
     },
   },
   {
@@ -51,26 +52,15 @@ const routes = [
     name: "OTP",
     component: () => import("@/views/Otp.vue"),
     meta: {
-      requiredAuth: false,
-      layout: "Default",
+      layout: "NoNavbar",
     },
   },
   {
     path: "/newPassword",
     name: "NewPassword",
-    component: () => import("@/views/Newpassword.vue"),
+    component: NewPassword,
     meta: {
-      requiredAuth: false,
-      layout: "Default",
-    },
-  },
-  {
-    path: "/about",
-    name: "About",
-    component: About,
-    meta: {
-      requiredAuth: false,
-      layout: "Default",
+      layout: "NoNavbar",
     },
   },
   {
@@ -78,8 +68,7 @@ const routes = [
     name: "Maintenance",
     component: () => import("@/views/Maintenance.vue"),
     meta: {
-      requiredAuth: false,
-      layout: "Default",
+      layout: "NoNavbar",
     },
   },
   {
@@ -87,86 +76,90 @@ const routes = [
     name: "NextLaunch",
     component: () => import("@/views/NextLaunch.vue"),
     meta: {
-      requiredAuth: true,
+      requiresAuth: true,
+      layout: "NoNavbar",
+    },
+  },
+  {
+    path: "/changePassword",
+    name: "ChangePassword",
+    component: NewPassword,
+    meta: {
+      layout: "Default",
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/vm",
+    name: "VM",
+    component: VM,
+    meta: {
+      requiresAuth: true,
       layout: "Default",
     },
   },
   {
-    path: "/",
-    component: () => import("@/layouts/default/Default.vue"),
+    path: "/account",
+    component: Account,
     meta: {
-      requiredAuth: true,
+      layout: "Default",
+      requiresAuth: true,
     },
     children: [
       {
-        path: "/home",
-        name: "Home",
-        component: Home,
-        meta: {
-          requiredAuth: true,
-        },
+        path: "",
+        component: ProfileTab,
       },
       {
-        path: "/profile",
-        name: "Profile",
-        component: Profile,
-        meta: {
-          requiredAuth: true,
-        },
+        path: "payments",
+        component: PaymentsTab,
       },
       {
-        path: "/changePassword",
-        name: "ChangePassword",
-        component: NewPassword,
-        meta: {
-          requiredAuth: true,
-        },
+        path: "change-password",
+        component: ChangePassword,
       },
       {
-        path: "/vm",
-        name: "VM",
-        component: VM,
-        meta: {
-          requiredAuth: true,
-        },
+        path: "delete-account",
+        component: DeleteAccount,
       },
       {
-        path: "/k8s",
-        name: "K8s",
-        component: K8s,
-        meta: {
-          requiredAuth: true,
-        },
+        path: "invoices",
+        component: Invoices,
       },
       {
-        path: "/about",
-        name: "About",
-        component: About,
-        meta: {
-          requiredAuth: false,
-        },
-      },
-      {
-        path: "admin",
-        name: "Admin",
-        component: Admin,
-        meta: {
-          requiredAuth: true,
-        },
-      },
-      {
-        path: "/logout",
-        name: "Logout",
-        redirect: "/login",
+        path: "audit-logs",
+        component: AuditLogs,
       },
     ],
+  },
+  {
+    path: "/deploy",
+    name: "Deploy",
+    component: Deploy,
+    meta: {
+      layout: "Default",
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/admin",
+    name: "Admin",
+    component: Admin,
+    meta: {
+      layout: "Default",
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/logout",
+    name: "Logout",
+    redirect: "/login",
   },
   {
     path: "/:pathMatch(.*)*",
     name: "PageNotFound",
     component: () => import("@/views/PageNotFound.vue"),
     meta: {
-      requiredAuth: false,
       layout: "NoNavbar",
     },
   },
@@ -178,24 +171,13 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  let token = localStorage.getItem("token");
-  userService.maintenance();
+  const isAuthenticated = localStorage.getItem("token") !== null;
+  const store = useUserStore();
 
-  if (to.meta.requiredAuth && !token) {
-    next("/login");
-  } else if (to.path == "/" && token) {
-    await userService.refresh_token();
-    await userService.nextlaunch();
-    await userService.handleNextLaunch();
-    next("/home");
-  } else if (to.meta.requiredAuth) {
-    await userService.refresh_token();
-    await userService.nextlaunch();
-    await userService.handleNextLaunch();
-    next();
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next("/");
   } else {
-    await userService.nextlaunch();
-    await userService.handleNextLaunch();
+    if (!store.user && isAuthenticated) await store.getUserInfo();
     next();
   }
 });

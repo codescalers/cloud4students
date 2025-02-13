@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	c4sDeployer "github.com/codescalers/cloud4students/deployer"
+	_ "github.com/codescalers/cloud4students/docs"
 	"github.com/codescalers/cloud4students/internal"
 	"github.com/codescalers/cloud4students/middlewares"
 	"github.com/codescalers/cloud4students/models"
@@ -13,6 +14,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/stripe/stripe-go/v81"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/threefoldtech/tfgrid-sdk-go/grid-client/deployer"
 )
 
@@ -23,6 +26,7 @@ type App struct {
 	db       models.DB
 	redis    streams.RedisClient
 	deployer c4sDeployer.Deployer
+	mailer   internal.Mailer
 }
 
 // NewApp creates new server app all configurations
@@ -31,6 +35,8 @@ func NewApp(ctx context.Context, configFile string) (app *App, err error) {
 	if err != nil {
 		return
 	}
+
+	stripe.Key = config.StripeSecret
 
 	db := models.NewDB()
 	err = db.Connect(config.Database.File)
@@ -55,7 +61,7 @@ func NewApp(ctx context.Context, configFile string) (app *App, err error) {
 		return
 	}
 
-	newDeployer, err := c4sDeployer.NewDeployer(db, redis, tfPluginClient)
+	newDeployer, err := c4sDeployer.NewDeployer(db, redis, tfPluginClient, config.PricesPerMonth)
 	if err != nil {
 		return
 	}
@@ -68,6 +74,7 @@ func NewApp(ctx context.Context, configFile string) (app *App, err error) {
 		db:       db,
 		redis:    redis,
 		deployer: newDeployer,
+		mailer:   internal.NewMailer(config.MailSender.SendGridKey),
 	}, nil
 }
 
@@ -83,6 +90,10 @@ func (a *App) startBackgroundWorkers(ctx context.Context) {
 	// notify admins
 	go a.notifyAdmins()
 
+	// Invoices
+	go a.monthlyInvoices()
+	go a.sendRemindersToPayInvoices()
+
 	// periodic deployments
 	go a.deployer.PeriodicRequests(ctx, substrateBlockDiffInSeconds)
 	go a.deployer.PeriodicDeploy(ctx, substrateBlockDiffInSeconds)
@@ -95,6 +106,9 @@ func (a *App) startBackgroundWorkers(ctx context.Context) {
 func (a *App) registerHandlers() {
 	r := mux.NewRouter()
 
+	// Setup Swagger UI route
+	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+
 	// version router
 	versionRouter := r.PathPrefix("/" + a.config.Version).Subrouter()
 	authRouter := versionRouter.NewRoute().Subrouter()
@@ -102,10 +116,14 @@ func (a *App) registerHandlers() {
 
 	// sub routes with authorization
 	userRouter := authRouter.PathPrefix("/user").Subrouter()
-	quotaRouter := authRouter.PathPrefix("/quota").Subrouter()
+	invoiceRouter := authRouter.PathPrefix("/invoice").Subrouter()
+	cardRouter := userRouter.PathPrefix("/card").Subrouter()
+	logRouter := userRouter.PathPrefix("/log").Subrouter()
+	eventRouter := userRouter.PathPrefix("/event").Subrouter()
 	notificationRouter := authRouter.PathPrefix("/notification").Subrouter()
 	vmRouter := authRouter.PathPrefix("/vm").Subrouter()
 	k8sRouter := authRouter.PathPrefix("/k8s").Subrouter()
+	regionRouter := authRouter.PathPrefix("/region").Subrouter()
 
 	// sub routes with no authorization
 	unAuthUserRouter := versionRouter.PathPrefix("/user").Subrouter()
@@ -123,19 +141,38 @@ func (a *App) registerHandlers() {
 	unAuthUserRouter.HandleFunc("/signup/verify_email", WrapFunc(a.VerifySignUpCodeHandler)).Methods("POST", "OPTIONS")
 	unAuthUserRouter.HandleFunc("/signin", WrapFunc(a.SignInHandler)).Methods("POST", "OPTIONS")
 	unAuthUserRouter.HandleFunc("/refresh_token", WrapFunc(a.RefreshJWTHandler)).Methods("POST", "OPTIONS")
+	// TODO: rename it
 	unAuthUserRouter.HandleFunc("/forgot_password", WrapFunc(a.ForgotPasswordHandler)).Methods("POST", "OPTIONS")
 	unAuthUserRouter.HandleFunc("/forget_password/verify_email", WrapFunc(a.VerifyForgetPasswordCodeHandler)).Methods("POST", "OPTIONS")
 
 	userRouter.HandleFunc("/change_password", WrapFunc(a.ChangePasswordHandler)).Methods("PUT", "OPTIONS")
 	userRouter.HandleFunc("", WrapFunc(a.UpdateUserHandler)).Methods("PUT", "OPTIONS")
 	userRouter.HandleFunc("", WrapFunc(a.GetUserHandler)).Methods("GET", "OPTIONS")
+	userRouter.HandleFunc("", WrapFunc(a.DeleteUserHandler)).Methods("DELETE", "OPTIONS")
 	userRouter.HandleFunc("/apply_voucher", WrapFunc(a.ApplyForVoucherHandler)).Methods("POST", "OPTIONS")
 	userRouter.HandleFunc("/activate_voucher", WrapFunc(a.ActivateVoucherHandler)).Methods("PUT", "OPTIONS")
+	userRouter.HandleFunc("/charge_balance", WrapFunc(a.ChargeBalance)).Methods("PUT", "OPTIONS")
 
-	quotaRouter.HandleFunc("", WrapFunc(a.GetQuotaHandler)).Methods("GET", "OPTIONS")
+	cardRouter.HandleFunc("", WrapFunc(a.AddCardHandler)).Methods("POST", "OPTIONS")
+	cardRouter.HandleFunc("/{id}", WrapFunc(a.DeleteCardHandler)).Methods("DELETE", "OPTIONS")
+	cardRouter.HandleFunc("", WrapFunc(a.ListCardHandler)).Methods("GET", "OPTIONS")
+	cardRouter.HandleFunc("/default", WrapFunc(a.SetDefaultCardHandler)).Methods("PUT", "OPTIONS")
+
+	logRouter.HandleFunc("", WrapFunc(a.ListLogsHandler)).Methods("GET", "OPTIONS")
+
+	eventRouter.HandleFunc("", WrapFunc(a.ListEventsHandler)).Methods("GET", "OPTIONS")
+
+	invoiceRouter.HandleFunc("", WrapFunc(a.ListInvoicesHandler)).Methods("GET", "OPTIONS")
+	invoiceRouter.HandleFunc("/{id}", WrapFunc(a.GetInvoiceHandler)).Methods("GET", "OPTIONS")
+	invoiceRouter.HandleFunc("/download/{id}", WrapFunc(a.DownloadInvoiceHandler)).Methods("GET", "OPTIONS")
+	invoiceRouter.HandleFunc("/pay/{id}", WrapFunc(a.PayInvoiceHandler)).Methods("PUT", "OPTIONS")
 
 	notificationRouter.HandleFunc("", WrapFunc(a.ListNotificationsHandler)).Methods("GET", "OPTIONS")
+	notificationRouter.HandleFunc("/stream", a.sseNotificationsHandler).Methods("GET", "OPTIONS")
 	notificationRouter.HandleFunc("/{id}", WrapFunc(a.UpdateNotificationsHandler)).Methods("PUT", "OPTIONS")
+	notificationRouter.HandleFunc("", WrapFunc(a.SeenNotificationsHandler)).Methods("PUT", "OPTIONS")
+
+	regionRouter.HandleFunc("", WrapFunc(a.ListRegionsHandler)).Methods("GET", "OPTIONS")
 
 	vmRouter.HandleFunc("", WrapFunc(a.DeployVMHandler)).Methods("POST", "OPTIONS")
 	vmRouter.HandleFunc("/validate/{name}", WrapFunc(a.ValidateVMNameHandler)).Methods("Get", "OPTIONS")
@@ -156,27 +193,30 @@ func (a *App) registerHandlers() {
 
 	// ADMIN ACCESS
 	adminRouter.HandleFunc("/user/all", WrapFunc(a.GetAllUsersHandler)).Methods("GET", "OPTIONS")
-	adminRouter.HandleFunc("/quota/reset", WrapFunc(a.ResetUsersQuota)).Methods("PUT", "OPTIONS")
-	adminRouter.HandleFunc("/deployment/count", WrapFunc(a.GetDlsCountHandler)).Methods("GET", "OPTIONS")
-	adminRouter.HandleFunc("/announcement", WrapFunc(a.CreateNewAnnouncement)).Methods("POST", "OPTIONS")
-	adminRouter.HandleFunc("/email", WrapFunc(a.SendEmail)).Methods("POST", "OPTIONS")
-	adminRouter.HandleFunc("/set_admin", WrapFunc(a.SetAdmin)).Methods("PUT", "OPTIONS")
+	adminRouter.HandleFunc("/invoice/all", WrapFunc(a.GetAllInvoicesHandler)).Methods("GET", "OPTIONS")
+	adminRouter.HandleFunc("/announcement", WrapFunc(a.CreateNewAnnouncementHandler)).Methods("POST", "OPTIONS")
+	adminRouter.HandleFunc("/email", WrapFunc(a.SendEmailHandler)).Methods("POST", "OPTIONS")
+	adminRouter.HandleFunc("/set_admin", WrapFunc(a.SetAdminHandler)).Methods("PUT", "OPTIONS")
+	adminRouter.HandleFunc("/set_prices", WrapFunc(a.SetPricesHandler)).Methods("PUT", "OPTIONS")
 	balanceRouter.HandleFunc("", WrapFunc(a.GetBalanceHandler)).Methods("GET", "OPTIONS")
 	maintenanceRouter.HandleFunc("", WrapFunc(a.UpdateMaintenanceHandler)).Methods("PUT", "OPTIONS")
-	deploymentsRouter.HandleFunc("", WrapFunc(a.DeleteAllDeployments)).Methods("DELETE", "OPTIONS")
-	deploymentsRouter.HandleFunc("", WrapFunc(a.ListDeployments)).Methods("GET", "OPTIONS")
+	deploymentsRouter.HandleFunc("", WrapFunc(a.DeleteAllDeploymentsHandler)).Methods("DELETE", "OPTIONS")
+	deploymentsRouter.HandleFunc("/vm/{id}", WrapFunc(a.DeleteVMDeploymentHandler)).Methods("DELETE", "OPTIONS")
+	deploymentsRouter.HandleFunc("/k8s/{id}", WrapFunc(a.DeleteK8sDeploymentHandler)).Methods("DELETE", "OPTIONS")
+	deploymentsRouter.HandleFunc("/count", WrapFunc(a.GetDlsCountHandler)).Methods("GET", "OPTIONS")
 	nextLaunchRouter.HandleFunc("", WrapFunc(a.UpdateNextLaunchHandler)).Methods("PUT", "OPTIONS")
 
 	voucherRouter.HandleFunc("", WrapFunc(a.GenerateVoucherHandler)).Methods("POST", "OPTIONS")
 	voucherRouter.HandleFunc("", WrapFunc(a.ListVouchersHandler)).Methods("GET", "OPTIONS")
 	voucherRouter.HandleFunc("/{id}", WrapFunc(a.UpdateVoucherHandler)).Methods("PUT", "OPTIONS")
 	voucherRouter.HandleFunc("", WrapFunc(a.ApproveAllVouchersHandler)).Methods("PUT", "OPTIONS")
+	voucherRouter.HandleFunc("/all/reset", WrapFunc(a.ResetUsersVoucherBalanceHandler)).Methods("PUT", "OPTIONS")
 
 	// middlewares
-	r.Use(middlewares.LoggingMW)
 	r.Use(middlewares.EnableCors)
 
 	authRouter.Use(middlewares.Authorization(a.db, a.config.Token.Secret, a.config.Token.Timeout))
+	authRouter.Use(middlewares.AuditLogMiddleware(a.db))
 	adminRouter.Use(middlewares.AdminAccess(a.db))
 
 	// prometheus registration
