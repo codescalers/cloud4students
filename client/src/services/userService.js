@@ -259,7 +259,7 @@ export default {
 
   // Deployments
   async getDeploymentsCount() {
-    return await authClient().get("/deployment/count");
+    return await authClient().get("/deployments/count");
   },
 
   // Vouchers
@@ -275,8 +275,8 @@ export default {
     return await authClient().put("/voucher");
   },
 
-  async generateVoucher(length, vms, public_ips) {
-    return await authClient().post("/voucher", { length, vms, public_ips });
+  async generateVoucher(balance, length) {
+    return await authClient().post("/voucher", { balance, length });
   },
 
   async getAuditEvents() {
@@ -327,8 +327,6 @@ export default {
 
   // setting next launch value
   async setNextLaunch(value) {
-    return await authClient().put("/nextlaunch", {
-      launched: value,
-    });
+    return await authClient().put("/nextlaunch", { launched: value });
   },
 };

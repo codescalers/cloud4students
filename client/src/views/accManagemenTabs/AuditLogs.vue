@@ -14,7 +14,7 @@
           </template>
 
           <template #[`item.timestamp`]="{ item }">
-            {{ formatDate(item.timestamp) }}
+            {{ timeAgo.format(convertDate(item.timestamp)) }}
           </template>
         </v-data-table>
       </v-col>
@@ -26,7 +26,11 @@
 import { ref, onMounted } from "vue";
 import userService from "@/services/userService";
 import Toast from "@/components/Toast.vue";
+import TimeAgo from "javascript-time-ago";
+import en from "javascript-time-ago/locale/en";
+TimeAgo.addLocale(en)
 
+const timeAgo = ref(new TimeAgo("en-US"));
 const events = ref([]);
 const toast = ref(null);
 const loading = ref(false);
@@ -40,6 +44,10 @@ const headers = ref([
     key: "timestamp",
   },
 ]);
+
+function convertDate(date) {
+  return new Date(date);
+}
 
 async function getAuditEvents() {
   loading.value = true;
@@ -56,18 +64,6 @@ async function getAuditEvents() {
     .finally(() => {
       loading.value = false;
     });
-}
-
-function formatDate(date) {
-  var d = new Date(date),
-    month = "" + (d.getMonth() + 1),
-    day = "" + d.getDate(),
-    year = d.getFullYear();
-
-  if (month.length < 2) month = "0" + month;
-  if (day.length < 2) day = "0" + day;
-
-  return [day, month, year].join("-");
 }
 
 onMounted(async () => {

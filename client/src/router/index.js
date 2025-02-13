@@ -5,14 +5,16 @@ import Account from "@/views/Account.vue";
 import VM from "@/views/VM.vue";
 import Admin from "@/views/Admin.vue";
 import NewPassword from "@/views/Newpassword.vue";
-import ProfileTab from "@/views/tabs/Profile.vue";
-import PaymentsTab from "@/views/tabs/Payments.vue";
-import Invoices from "@/views/tabs/Invoices.vue";
-import ChangePassword from "@/views/tabs/ChangePassword.vue";
-import AuditLogs from "@/views/tabs/AuditLogs.vue";
-import DeleteAccount from "@/views/tabs/DeleteAccount.vue";
+import ProfileTab from "@/views/accManagemenTabs/Profile.vue";
+import PaymentsTab from "@/views/accManagemenTabs/Payments.vue";
+import Invoices from "@/views/accManagemenTabs/Invoices.vue";
+import ChangePassword from "@/views/accManagemenTabs/ChangePassword.vue";
+import AuditLogs from "@/views/accManagemenTabs/AuditLogs.vue";
+import DeleteAccount from "@/views/accManagemenTabs/DeleteAccount.vue";
 import Deploy from "@/views/Deploy.vue";
 import Home from "@/views/HomeWrapper.vue";
+import Requests from "@/views/adminTabs/Requests.vue";
+import History from "@/views/adminTabs/History.vue";
 
 const routes = [
   {
@@ -145,10 +147,28 @@ const routes = [
     path: "/admin",
     name: "Admin",
     component: Admin,
+    beforeEnter(to, from, next) {
+      const store = useUserStore();
+
+      if (!store.isAdmin) {
+        next("/");
+      }
+      next();
+    },
     meta: {
       layout: "Default",
       requiresAuth: true,
     },
+    children: [
+      {
+        path: "",
+        component: Requests,
+      },
+      {
+        path: "history",
+        component: History,
+      },
+    ],
   },
   {
     path: "/logout",
@@ -171,13 +191,13 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  const isAuthenticated = localStorage.getItem("token") !== null;
   const store = useUserStore();
+  const { isAuthenticated, user } = store;
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     next("/");
   } else {
-    if (!store.user && isAuthenticated) await store.getUserInfo();
+    if (!user && isAuthenticated) await store.getUserInfo();
     next();
   }
 });
