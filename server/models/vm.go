@@ -44,7 +44,8 @@ func (d *DB) GetVMByID(id int) (VM, error) {
 // GetAllVms returns all vms of user
 func (d *DB) GetAllVms(userID string) ([]VM, error) {
 	var vms []VM
-	return vms, d.db.Where("user_id = ?", userID).Find(&vms).Error
+	return vms, d.db.Where("user_id = ?", userID).
+		Where("state != ?", StateFailed).Find(&vms).Error
 }
 
 // GetAllSuccessfulVms returns all vms of user that have a state succeeded

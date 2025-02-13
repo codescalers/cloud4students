@@ -9,13 +9,15 @@ type DeploymentsCount struct {
 // CountAllDeployments returns deployments and IPs count
 func (d *DB) CountAllDeployments() (DeploymentsCount, error) {
 	var vmsCount int64
-	result := d.db.Table("vms").Count(&vmsCount)
+	result := d.db.Table("vms").
+		Where("state != ?", StateFailed).Count(&vmsCount)
 	if result.Error != nil {
 		return DeploymentsCount{}, result.Error
 	}
 
 	var k8sCount int64
-	result = d.db.Table("masters").Count(&k8sCount)
+	result = d.db.Table("k8s_clusters").
+		Where("state != ?", StateFailed).Count(&k8sCount)
 	if result.Error != nil {
 		return DeploymentsCount{}, result.Error
 	}
@@ -23,13 +25,15 @@ func (d *DB) CountAllDeployments() (DeploymentsCount, error) {
 	dlsCount := k8sCount + vmsCount
 
 	var vmIPsCount int64
-	result = d.db.Table("vms").Where("public = true").Count(&vmIPsCount)
+	result = d.db.Table("vms").Where("public = true").
+		Where("state != ?", StateFailed).Count(&vmIPsCount)
 	if result.Error != nil {
 		return DeploymentsCount{}, result.Error
 	}
 
 	var k8sIPsCount int64
-	result = d.db.Table("masters").Where("public = true").Count(&k8sIPsCount)
+	result = d.db.Table("k8s_clusters").Joins("JOIN masters ON k8s_clusters.id = masters.cluster_id").
+		Where("public = true").Where("state != ?", StateFailed).Count(&k8sIPsCount)
 	if result.Error != nil {
 		return DeploymentsCount{}, result.Error
 	}
@@ -47,13 +51,15 @@ func (d *DB) CountAllDeployments() (DeploymentsCount, error) {
 // CountUserDeployments returns deployments and IPs count per user
 func (d *DB) CountUserDeployments(userID string) (DeploymentsCount, error) {
 	var vmsCount int64
-	result := d.db.Table("vms").Where("user_id = ?", userID).Count(&vmsCount)
+	result := d.db.Table("vms").Where("user_id = ?", userID).
+		Where("state != ?", StateFailed).Count(&vmsCount)
 	if result.Error != nil {
 		return DeploymentsCount{}, result.Error
 	}
 
 	var k8sCount int64
-	result = d.db.Table("k8s_clusters").Where("user_id = ?", userID).Count(&k8sCount)
+	result = d.db.Table("k8s_clusters").Where("user_id = ?", userID).
+		Where("state != ?", StateFailed).Count(&k8sCount)
 	if result.Error != nil {
 		return DeploymentsCount{}, result.Error
 	}
@@ -61,14 +67,16 @@ func (d *DB) CountUserDeployments(userID string) (DeploymentsCount, error) {
 	dlsCount := k8sCount + vmsCount
 
 	var vmIPsCount int64
-	result = d.db.Table("vms").Where("public = true").Where("user_id = ?", userID).Count(&vmIPsCount)
+	result = d.db.Table("vms").Where("public = true").Where("user_id = ?", userID).
+		Where("state != ?", StateFailed).Count(&vmIPsCount)
 	if result.Error != nil {
 		return DeploymentsCount{}, result.Error
 	}
 
 	var k8sIPsCount int64
 	result = d.db.Table("k8s_clusters").Joins("JOIN masters ON k8s_clusters.id = masters.cluster_id").
-		Where("public = true").Where("user_id = ?", userID).Count(&k8sIPsCount)
+		Where("public = true").Where("user_id = ?", userID).
+		Where("state != ?", StateFailed).Count(&k8sIPsCount)
 	if result.Error != nil {
 		return DeploymentsCount{}, result.Error
 	}
