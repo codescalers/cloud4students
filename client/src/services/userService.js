@@ -6,25 +6,29 @@ const baseClient = () =>
     baseURL: window.configs.vite_app_endpoint,
   });
 
-const authClient = () =>
-  axios.create({
+const authClient = () => {
+  const client = axios.create({
     baseURL: window.configs.vite_app_endpoint,
     headers: {
       Authorization: "Bearer " + localStorage.getItem("token"),
     },
   });
 
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      console.error("Unauthorized access - redirecting to home");
-      localStorage.removeItem("token");
-      router.push({ name: "Home" });
+  client.interceptors.response.use(
+    (response) => {
+      return response;
+    },
+    (error) => {
+      if (error.response && error.response.status === 401) {
+        console.error("Unauthorized access - redirecting to home");
+        localStorage.removeItem("token");
+        router.push("/");
+      }
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
-  }
-);
+  );
+  return client;
+};
 
 let refreshInterval;
 
@@ -88,7 +92,7 @@ export default {
   logout() {
     localStorage.removeItem("token");
     clearInterval(refreshInterval);
-    router.push("/login");
+    router.push("/");
   },
 
   async forgotPassword(email) {
