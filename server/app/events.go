@@ -251,22 +251,6 @@ func (a *App) logCardAdded(userID, last4digits string) error {
 	return nil
 }
 
-func (a *App) logNotificationSeen(userID string, notificationID int) error {
-	event := models.AuditEvent{
-		UserID:    userID,
-		Action:    "seen_notification",
-		Role:      string(userRole),
-		Timestamp: time.Now(),
-		Metadata:  fmt.Sprintf("Notification %v is seen", notificationID),
-	}
-
-	if err := a.db.CreateAuditEvent(&event); err != nil {
-		return errors.Wrapf(err, "Failed to log audit event: %s", event.Action)
-	}
-
-	return nil
-}
-
 func (a *App) logVoucherBalanceUpdate(userID, currency string, role role, balance float64) error {
 	event := models.AuditEvent{
 		UserID:    userID,

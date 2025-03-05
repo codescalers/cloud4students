@@ -76,11 +76,6 @@ func (a *App) UpdateNotificationsHandler(req *http.Request) (interface{}, Respon
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
-	if err := a.logNotificationSeen(userID, id); err != nil {
-		log.Error().Err(err).Send()
-		return nil, InternalServerError(errors.New(internalServerErrorMsg))
-	}
-
 	return ResponseMsg{
 		Message: "Notifications are updated",
 		Data:    nil,
