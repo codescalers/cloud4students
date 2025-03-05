@@ -333,3 +333,35 @@ func UsagePercentageInMonth(start time.Time, end time.Time) (float64, error) {
 
 	return usedHours / totalHoursInMonth, nil
 }
+
+func logVMCreate(db models.DB, userID string, vmID int) error {
+	event := models.AuditEvent{
+		UserID:    userID,
+		Action:    "create_vm",
+		Role:      "User",
+		Timestamp: time.Now(),
+		Metadata:  fmt.Sprintf("Virtual machine %v is created successfully", vmID),
+	}
+
+	if err := db.CreateAuditEvent(&event); err != nil {
+		return errors.Wrapf(err, "Failed to log audit event: %s", event.Action)
+	}
+
+	return nil
+}
+
+func logK8sCreate(db models.DB, userID string, k8sID int) error {
+	event := models.AuditEvent{
+		UserID:    userID,
+		Action:    "create_k8s",
+		Role:      "User",
+		Timestamp: time.Now(),
+		Metadata:  fmt.Sprintf("Kubernetes %v is created successfully", k8sID),
+	}
+
+	if err := db.CreateAuditEvent(&event); err != nil {
+		return errors.Wrapf(err, "Failed to log audit event: %s", event.Action)
+	}
+
+	return nil
+}

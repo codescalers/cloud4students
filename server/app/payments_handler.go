@@ -128,6 +128,11 @@ func (a *App) AddCardHandler(req *http.Request) (interface{}, Response) {
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	if err := a.logCardAdded(userID, paymentMethod.Card.Last4); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	// if no payment is added before then we update the user payment ID with it as a default
 	if len(strings.TrimSpace(user.StripeDefaultPaymentID)) == 0 {
 		// Update the default payment method for future payments
@@ -143,6 +148,11 @@ func (a *App) AddCardHandler(req *http.Request) (interface{}, Response) {
 			return nil, NotFound(errors.New("user is not found"))
 		}
 		if err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
+
+		if err := a.logCardDefaultSet(userID, paymentMethod.Card.Last4); err != nil {
 			log.Error().Err(err).Send()
 			return nil, InternalServerError(errors.New(internalServerErrorMsg))
 		}
@@ -225,6 +235,11 @@ func (a *App) SetDefaultCardHandler(req *http.Request) (interface{}, Response) {
 		return nil, NotFound(errors.New("user is not found"))
 	}
 	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	if err := a.logCardDefaultSet(userID, card.Last4); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
@@ -378,6 +393,11 @@ func (a *App) DeleteCardHandler(req *http.Request) (interface{}, Response) {
 			log.Error().Err(err).Send()
 			return nil, InternalServerError(errors.New(internalServerErrorMsg))
 		}
+
+		if err := a.logCardDefaultSet(userID, card.Last4); err != nil {
+			log.Error().Err(err).Send()
+			return nil, InternalServerError(errors.New(internalServerErrorMsg))
+		}
 	}
 
 	// If user has another cards or no active deployments, so can delete
@@ -388,6 +408,11 @@ func (a *App) DeleteCardHandler(req *http.Request) (interface{}, Response) {
 	}
 
 	if err = a.db.DeleteCard(id); err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	if err := a.logCardDelete(userID, card.Last4); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}

@@ -23,6 +23,7 @@ require (
 	github.com/swaggo/swag v1.16.4
 	github.com/threefoldtech/tfgrid-sdk-go/grid-client v0.16.0
 	github.com/threefoldtech/tfgrid-sdk-go/grid-proxy v0.16.0
+	github.com/urfave/negroni/v3 v3.1.1
 	golang.org/x/crypto v0.30.0
 	golang.org/x/text v0.21.0
 	gopkg.in/validator.v2 v2.0.1
