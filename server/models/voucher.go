@@ -71,3 +71,8 @@ func (d *DB) GetNotUsedVoucherByUserID(id string) (Voucher, error) {
 	var res Voucher
 	return res, d.db.Last(&res, "user_id = ? AND used = false", id).Error
 }
+
+func (d *DB) DeleteUserVouchers(userID string) error {
+	var vouchers []Voucher
+	return d.db.Clauses(clause.Returning{}).Where("user_id = ?", userID).Delete(&vouchers).Error
+}

@@ -1050,15 +1050,22 @@ func (a *App) DeleteUserHandler(req *http.Request) (interface{}, Response) {
 		}
 	}
 
+	// 6. Delete vouchers
+	err = a.db.DeleteUserVouchers(userID)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	// 7. Remove cards
 	err = a.db.DeleteAllCards(userID)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
-	// 6. TODO: should invoices be deleted?
+	// 8. TODO: should invoices be deleted?
 
-	// 7. Remove cards
 	err = a.db.DeleteUser(userID)
 	if err == gorm.ErrRecordNotFound {
 		return nil, NotFound(errors.New("user is not found"))
