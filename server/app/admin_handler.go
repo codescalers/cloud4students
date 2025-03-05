@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -266,7 +267,7 @@ func (a *App) GetBalanceHandler(req *http.Request) (interface{}, Response) {
 
 	return ResponseMsg{
 		Message: "Balance is found",
-		Data:    balance,
+		Data:    math.Round(balance*100) / 100,
 	}, Ok()
 }
 
