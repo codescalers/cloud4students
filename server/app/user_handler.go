@@ -1068,6 +1068,19 @@ func (a *App) DeleteUserHandler(req *http.Request) (interface{}, Response) {
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	subject, body := internal.AdminMailContent(
+		"Your account has been deleted",
+		"We are writing to confirm that your account has been successfully deleted as per your request.\n\n"+
+			"All your personal data, account information, and associated content have been permanently removed from our system",
+		a.config.Server.Host, user.Name(),
+	)
+
+	err = internal.SendMail(a.config.MailSender.Email, a.config.MailSender.SendGridKey, user.Email, subject, body)
+	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "User is deleted successfully",
 	}, Ok()
