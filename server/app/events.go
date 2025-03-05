@@ -251,22 +251,6 @@ func (a *App) logCardAdded(userID, last4digits string) error {
 	return nil
 }
 
-func (a *App) logNotificationSeen(userID string, notificationID int) error {
-	event := models.AuditEvent{
-		UserID:    userID,
-		Action:    "seen_notification",
-		Role:      string(userRole),
-		Timestamp: time.Now(),
-		Metadata:  fmt.Sprintf("Notification %v is seen", notificationID),
-	}
-
-	if err := a.db.CreateAuditEvent(&event); err != nil {
-		return errors.Wrapf(err, "Failed to log audit event: %s", event.Action)
-	}
-
-	return nil
-}
-
 func (a *App) logVoucherBalanceUpdate(userID, currency string, role role, balance float64) error {
 	event := models.AuditEvent{
 		UserID:    userID,
@@ -312,7 +296,7 @@ func (a *App) logK8sDelete(userID string, role role, k8sID int, createdAt time.T
 		Role:      string(role),
 		Timestamp: time.Now(),
 		Metadata: fmt.Sprintf(
-			"Kubernetes %v which created at %v, is deleted", k8sID, createdAt,
+			"Kubernetes %v which created at %v, is deleted", k8sID, createdAt.Format("January 2, 2006"),
 		),
 	}
 
@@ -331,7 +315,7 @@ func (a *App) logVMDelete(userID string, role role, vmID int, createdAt time.Tim
 		Timestamp: time.Now(),
 		Metadata: fmt.Sprintf(
 			"Virtual machine %v which created at %v, is deleted",
-			vmID, createdAt,
+			vmID, createdAt.Format("January 2, 2006"),
 		),
 	}
 
@@ -350,7 +334,7 @@ func (a *App) logInvoiceCreate(userID, currency string, invoiceID int, invoiceTo
 		Timestamp: time.Now(),
 		Metadata: fmt.Sprintf(
 			"Invoice %v with value: %v %v is created at %v",
-			invoiceID, invoiceTotal, currency, createdAt,
+			invoiceID, invoiceTotal, currency, createdAt.Format("January 2, 2006"),
 		),
 	}
 

@@ -29,8 +29,6 @@ import (
 // @Failure 500 {object} Response
 // @Router /notification/{id} [put]
 func (a *App) UpdateNotificationsHandler(req *http.Request) (interface{}, Response) {
-	userID := req.Context().Value(middlewares.UserIDKey("UserID")).(string)
-
 	id, err := strconv.Atoi(mux.Vars(req)["id"])
 	if err != nil {
 		log.Error().Err(err).Send()
@@ -39,11 +37,6 @@ func (a *App) UpdateNotificationsHandler(req *http.Request) (interface{}, Respon
 
 	err = a.db.UpdateNotification(id, true)
 	if err != nil {
-		log.Error().Err(err).Send()
-		return nil, InternalServerError(errors.New(internalServerErrorMsg))
-	}
-
-	if err := a.logNotificationSeen(userID, id); err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
