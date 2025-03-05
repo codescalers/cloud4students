@@ -1,6 +1,8 @@
 // Package models for database models
 package models
 
+import "time"
+
 const (
 	// VMsType deployment
 	VMsType = "vms"
@@ -15,7 +17,8 @@ type Notification struct {
 	Msg    string `json:"msg" binding:"required"`
 	Seen   bool   `json:"seen" binding:"required"`
 	// to allow redirecting from notifications to the right pages
-	Type string `json:"type" binding:"required"`
+	Type      string    `json:"type" binding:"required"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // ListNotifications returns a list of notifications for a user.

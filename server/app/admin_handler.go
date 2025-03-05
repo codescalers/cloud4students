@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -244,6 +245,26 @@ func (a *App) GetDlsCountHandler(req *http.Request) (interface{}, Response) {
 	}, Ok()
 }
 
+// GetPricesHandler return vms and public ip prices
+// Example endpoint: Get vms and public ip prices
+// @Summary Get vms and public ip prices
+// @Description Get vms and public ip prices
+// @Tags Admin
+// @Accept  json
+// @Produce  json
+// @Security BearerAuth
+// @Success 200 {object} internal.Prices
+// @Failure 400 {object} Response
+// @Failure 401 {object} Response
+// @Failure 500 {object} Response
+// @Router /prices [get]
+func (a *App) GetPricesHandler(req *http.Request) (interface{}, Response) {
+	return ResponseMsg{
+		Message: "Prices are found",
+		Data:    a.config.PricesPerMonth,
+	}, Ok()
+}
+
 // GetBalanceHandler return account balance information
 // Example endpoint: Get main TF account balance
 // @Summary Get main TF account balance
@@ -266,7 +287,7 @@ func (a *App) GetBalanceHandler(req *http.Request) (interface{}, Response) {
 
 	return ResponseMsg{
 		Message: "Balance is found",
-		Data:    balance,
+		Data:    math.Round(balance*100) / 100,
 	}, Ok()
 }
 

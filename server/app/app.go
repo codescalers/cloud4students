@@ -130,6 +130,7 @@ func (a *App) registerHandlers() {
 	voucherRouter := adminRouter.PathPrefix("/voucher").Subrouter()
 	maintenanceRouter := adminRouter.PathPrefix("/maintenance").Subrouter()
 	balanceRouter := adminRouter.PathPrefix("/balance").Subrouter()
+	pricesRouter := adminRouter.PathPrefix("/prices").Subrouter()
 	deploymentsRouter := adminRouter.PathPrefix("/deployments").Subrouter()
 	nextLaunchRouter := adminRouter.PathPrefix("/nextlaunch").Subrouter()
 
@@ -188,6 +189,7 @@ func (a *App) registerHandlers() {
 	adminRouter.HandleFunc("/set_admin", WrapFunc(a.SetAdminHandler)).Methods("PUT", "OPTIONS")
 	adminRouter.HandleFunc("/set_prices", WrapFunc(a.SetPricesHandler)).Methods("PUT", "OPTIONS")
 	balanceRouter.HandleFunc("", WrapFunc(a.GetBalanceHandler)).Methods("GET", "OPTIONS")
+	pricesRouter.HandleFunc("", WrapFunc(a.GetPricesHandler)).Methods("GET", "OPTIONS")
 	maintenanceRouter.HandleFunc("", WrapFunc(a.UpdateMaintenanceHandler)).Methods("PUT", "OPTIONS")
 	deploymentsRouter.HandleFunc("", WrapFunc(a.DeleteAllDeploymentsHandler)).Methods("DELETE", "OPTIONS")
 	deploymentsRouter.HandleFunc("/vm/{id}", WrapFunc(a.DeleteVMDeploymentHandler)).Methods("DELETE", "OPTIONS")

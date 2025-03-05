@@ -250,6 +250,15 @@ func (a *App) VerifySignUpCodeHandler(req *http.Request) (interface{}, Response)
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	notification := models.Notification{UserID: user.ID.String(),
+		Msg: "Welcome! Your account has been created successfully",
+	}
+	err = a.db.CreateNotification(&notification)
+	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "Account is created successfully.",
 	}, Created()
@@ -1041,19 +1050,39 @@ func (a *App) DeleteUserHandler(req *http.Request) (interface{}, Response) {
 		}
 	}
 
+	// 6. Delete vouchers
+	err = a.db.DeleteUserVouchers(userID)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	// 7. Remove cards
 	err = a.db.DeleteAllCards(userID)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
-	// 6. TODO: should invoices be deleted?
+	// 8. TODO: should invoices be deleted?
 
-	// 7. Remove cards
 	err = a.db.DeleteUser(userID)
 	if err == gorm.ErrRecordNotFound {
 		return nil, NotFound(errors.New("user is not found"))
 	}
+	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
+	subject, body := internal.AdminMailContent(
+		"Your account has been deleted",
+		"We are writing to confirm that your account has been successfully deleted as per your request.\n\n"+
+			"All your personal data, account information, and associated content have been permanently removed from our system",
+		a.config.Server.Host, user.Name(),
+	)
+
+	err = internal.SendMail(a.config.MailSender.Email, a.config.MailSender.SendGridKey, user.Email, subject, body)
 	if err != nil {
 		log.Error().Err(err).Send()
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))

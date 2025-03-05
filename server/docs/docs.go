@@ -1117,6 +1117,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/prices": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get vms and public ip prices",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get vms and public ip prices",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal.Prices"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {}
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {}
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {}
+                    }
+                }
+            }
+        },
         "/region": {
             "get": {
                 "security": [
@@ -3154,6 +3194,23 @@ const docTemplate = `{
                 "voucherAndBalanceAndCard"
             ]
         },
+        "internal.Prices": {
+            "type": "object",
+            "properties": {
+                "large_vm": {
+                    "type": "number"
+                },
+                "medium_vm": {
+                    "type": "number"
+                },
+                "public_ip": {
+                    "type": "number"
+                },
+                "small_vm": {
+                    "type": "number"
+                }
+            }
+        },
         "models.Card": {
             "type": "object",
             "required": [
@@ -3394,6 +3451,9 @@ const docTemplate = `{
                 "user_id"
             ],
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 },
