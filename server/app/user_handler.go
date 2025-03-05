@@ -250,6 +250,15 @@ func (a *App) VerifySignUpCodeHandler(req *http.Request) (interface{}, Response)
 		return nil, InternalServerError(errors.New(internalServerErrorMsg))
 	}
 
+	notification := models.Notification{UserID: user.ID.String(),
+		Msg: "Welcome! Your account has been created successfully",
+	}
+	err = a.db.CreateNotification(&notification)
+	if err != nil {
+		log.Error().Err(err).Send()
+		return nil, InternalServerError(errors.New(internalServerErrorMsg))
+	}
+
 	return ResponseMsg{
 		Message: "Account is created successfully.",
 	}, Created()
