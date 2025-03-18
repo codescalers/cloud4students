@@ -15,7 +15,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
 	github.com/threefoldtech/tfgrid-sdk-go/grid-client v0.16.0
-	github.com/threefoldtech/tfgrid-sdk-go/grid-proxy v0.16.0
+	github.com/threefoldtech/tfgrid-sdk-go/grid-proxy v0.16.6
 	golang.org/x/crypto v0.29.0
 	golang.org/x/text v0.20.0
 	gopkg.in/validator.v2 v2.0.1
